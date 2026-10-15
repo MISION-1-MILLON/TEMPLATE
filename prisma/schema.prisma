@@ -1,0 +1,192 @@
+// Base de datos de Nexo.
+// En desarrollo usa SQLite. Para producción cambia `provider` a "postgresql"
+// y DATABASE_URL a tu instancia de Postgres (ver README).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Cuentas y negocios ────────────────────────────────────────────────
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  memberships  Membership[]
+  sales        Sale[]
+}
+
+/// Un negocio (tenant). Todos los datos cuelgan de aquí.
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  /// Clave del sector en src/sectors (general, zapatillas, moda, restauracion, motor…)
+  sector      String   @default("general")
+  plan        String   @default("free")
+  currency    String   @default("EUR")
+  /// IVA por defecto en puntos básicos de porcentaje (2100 = 21 %)
+  taxRateBp   Int      @default(2100)
+  taxId       String?
+  address     String?
+  phone       String?
+  email       String?
+  invoicePrefix String @default("F")
+  storeEnabled Boolean @default(true)
+  createdAt   DateTime @default(now())
+
+  memberships    Membership[]
+  categories     Category[]
+  products       Product[]
+  customers      Customer[]
+  sales          Sale[]
+  stockMovements StockMovement[]
+  cashMovements  CashMovement[]
+}
+
+model Membership {
+  id     String @id @default(cuid())
+  role   String @default("owner") // owner | admin | staff
+  userId String
+  orgId  String
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+}
+
+// ─── Catálogo ──────────────────────────────────────────────────────────
+
+model Category {
+  id       String    @id @default(cuid())
+  orgId    String
+  name     String
+  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([orgId, name])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  orgId       String
+  categoryId  String?
+  name        String
+  sku         String?
+  description String?
+  imageUrl    String?
+  priceCents  Int      @default(0)
+  costCents   Int      @default(0)
+  /// IVA específico del producto; null = el del negocio
+  taxRateBp   Int?
+  stock       Int      @default(0)
+  trackStock  Boolean  @default(true)
+  lowStockAt  Int      @default(2)
+  /// Campos propios del sector (talla, colorway, alérgenos, km…)
+  attributes  Json
+  published   Boolean  @default(true)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  org            Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  category       Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  saleItems      SaleItem[]
+  stockMovements StockMovement[]
+
+  @@index([orgId, active])
+}
+
+// ─── Clientes ──────────────────────────────────────────────────────────
+
+model Customer {
+  id         String   @id @default(cuid())
+  orgId      String
+  name       String
+  email      String?
+  phone      String?
+  taxId      String?
+  address    String?
+  notes      String?
+  attributes Json
+  createdAt  DateTime @default(now())
+
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  sales Sale[]
+
+  @@index([orgId])
+}
+
+// ─── Ventas, stock y caja ──────────────────────────────────────────────
+
+model Sale {
+  id            String   @id @default(cuid())
+  orgId         String
+  /// Número correlativo por negocio (sirve de número de factura)
+  number        Int
+  customerId    String?
+  createdById   String?
+  status        String   @default("paid") // paid | pending | cancelled
+  paymentMethod String   @default("card") // cash | card | transfer | bizum | other
+  subtotalCents Int
+  taxCents      Int
+  totalCents    Int
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  customer  Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdBy User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  items     SaleItem[]
+
+  @@unique([orgId, number])
+  @@index([orgId, createdAt])
+}
+
+model SaleItem {
+  id             String  @id @default(cuid())
+  saleId         String
+  productId      String?
+  /// Copia del nombre en el momento de la venta (la factura no cambia si se edita el producto)
+  name           String
+  quantity       Int
+  unitPriceCents Int
+  taxRateBp      Int
+  sale    Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+}
+
+model StockMovement {
+  id        String   @id @default(cuid())
+  orgId     String
+  productId String
+  delta     Int
+  reason    String   // sale | cancel | adjust | purchase
+  saleId    String?
+  createdAt DateTime @default(now())
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, productId])
+}
+
+model CashMovement {
+  id          String   @id @default(cuid())
+  orgId       String
+  /// Positivo = entrada, negativo = salida
+  amountCents Int
+  method      String   @default("cash")
+  concept     String
+  saleId      String?
+  createdAt   DateTime @default(now())
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+}

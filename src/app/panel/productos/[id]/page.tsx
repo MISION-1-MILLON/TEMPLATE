@@ -38,6 +38,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         <div className="lg:col-span-2">
           <ProductForm
             productLabel={sector.terms.product}
+          productFeminine={sector.terms.productFeminine}
+          examplePlaceholder={sector.demoProducts[0]?.name}
             fields={sector.productFields}
             categories={categories.map((c) => ({ id: c.id, name: c.name }))}
             defaultTaxRate={String(org.taxRateBp / 100)}

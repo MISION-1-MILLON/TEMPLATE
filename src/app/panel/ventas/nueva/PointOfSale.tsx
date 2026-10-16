@@ -48,6 +48,8 @@ export function PointOfSale({
       (!query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku?.toLowerCase().includes(query.toLowerCase())),
   );
   const total = lines.reduce((a, l) => a + l.unitPriceCents * l.quantity, 0);
+  const units = lines.reduce((a, l) => a + l.quantity, 0);
+  const inTicket = (id: string) => lines.find((l) => l.productId === id)?.quantity ?? 0;
 
   function add(p: PosProduct) {
     const existing = lines.find((l) => l.productId === p.id);
@@ -102,8 +104,11 @@ export function PointOfSale({
                 type="button"
                 disabled={out}
                 onClick={() => add(p)}
-                className="card flex flex-col p-3 text-left transition hover:border-brand-500 disabled:opacity-40"
+                className={cn("card relative flex min-h-24 flex-col p-3 text-left transition hover:border-brand-500 active:scale-95 disabled:opacity-40", inTicket(p.id) > 0 && "border-brand-500 ring-2 ring-brand-500")}
               >
+                {inTicket(p.id) > 0 && (
+                  <span className="absolute -right-2 -top-2 grid h-6 min-w-6 place-items-center rounded-full bg-brand-600 px-1.5 text-xs font-bold text-white">{inTicket(p.id)}</span>
+                )}
                 <span className="line-clamp-2 text-sm font-semibold">{p.name}</span>
                 <span className="mt-auto flex items-end justify-between pt-2">
                   <span className="font-bold tabular-nums">{formatMoney(p.priceCents)}</span>
@@ -115,10 +120,10 @@ export function PointOfSale({
         </div>
       </section>
 
-      <aside className="card flex flex-col self-start p-5 lg:sticky lg:top-6 lg:col-span-2">
-        <h2 className="font-bold">Ticket</h2>
+      <aside id="ticket" className="card flex scroll-mt-20 flex-col self-start p-5 lg:sticky lg:top-6 lg:col-span-2">
+        <h2 className="text-lg font-bold">🧾 Lo que se lleva</h2>
         {lines.length === 0 ? (
-          <p className="py-8 text-center text-sm text-slate-500">Añade {terms.products.toLowerCase()} desde la izquierda.</p>
+          <p className="py-8 text-center text-sm text-slate-500">Toca un {terms.product.toLowerCase()} para añadirlo aquí.</p>
         ) : (
           <ul className="mt-3 divide-y divide-slate-100">
             {lines.map((l) => {
@@ -152,17 +157,17 @@ export function PointOfSale({
 
         <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
           <div>
-            <label className="label">{terms.customer} (opcional)</label>
+            <label className="label">¿Quién compra? (opcional)</label>
             <select className="input" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
-              <option value="">Sin {terms.customer.toLowerCase()} / nuevo</option>
+              <option value="">Cliente sin nombre / nuevo</option>
               {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             {!customerId && (
-              <input className="input mt-2" placeholder="Nombre de un cliente nuevo (opcional)" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} />
+              <input className="input mt-2" placeholder="Escribe su nombre si quieres guardarlo" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} />
             )}
           </div>
           <div>
-            <label className="label">Forma de pago</label>
+            <label className="label">¿Cómo paga?</label>
             <div className="flex flex-wrap gap-1.5">
               {Object.entries(PAYMENT_METHODS).map(([k, v]) => (
                 <button
@@ -171,26 +176,37 @@ export function PointOfSale({
                   onClick={() => setPaymentMethod(k)}
                   className={cn("rounded-full border px-3 py-1 text-sm", paymentMethod === k ? "border-brand-600 bg-brand-50 text-brand-700" : "border-slate-200")}
                 >
-                  {v}
+                  {PAY_ICONS[k]} {v}
                 </button>
               ))}
             </div>
           </div>
           <label className="flex items-center gap-2 text-sm text-slate-700">
             <input type="checkbox" checked={pendingPayment} onChange={(e) => setPendingPayment(e.target.checked)} />
-            Pendiente de cobro (se cobra más tarde)
+            Me lo pagará más tarde
           </label>
         </div>
 
         <div className="mt-4 flex items-baseline justify-between border-t border-slate-100 pt-4">
-          <span className="text-slate-600">Total (IVA incl.)</span>
+          <span className="text-slate-600">Total a cobrar</span>
           <span className="display text-3xl tabular-nums">{formatMoney(total)}</span>
         </div>
         {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
         <button type="button" className="btn-primary mt-4 py-3 text-base uppercase" disabled={lines.length === 0 || isPending} onClick={submit}>
-          {isPending ? "Registrando…" : pendingPayment ? "Registrar venta" : "Cobrar y registrar"}
+          {isPending ? "Guardando…" : pendingPayment ? "Apuntar venta" : `Cobrar ${formatMoney(total)}`}
         </button>
       </aside>
+
+      {lines.length > 0 && (
+        <div className="fixed inset-x-3 bottom-24 z-20 lg:hidden">
+          <a href="#ticket" className="flex items-center justify-between rounded-2xl bg-ink px-5 py-3 text-white shadow-xl">
+            <span className="text-sm">🧾 {units} {units === 1 ? "artículo" : "artículos"}</span>
+            <span className="font-bold">Cobrar {formatMoney(total)} →</span>
+          </a>
+        </div>
+      )}
     </div>
   );
 }
+
+const PAY_ICONS: Record<string, string> = { card: "💳", cash: "💵", bizum: "📱", transfer: "🏦", other: "•" };

@@ -16,7 +16,7 @@ export default async function NewSalePage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <PageHeader title="Nueva venta" subtitle="Toca para añadir. El stock, la caja y la factura se actualizan solos." />
+      <PageHeader title="Vender" subtitle="Toca lo que se lleva y pulsa cobrar. Del resto nos encargamos nosotros." />
       <PointOfSale
         terms={sector.terms}
         categories={categories}

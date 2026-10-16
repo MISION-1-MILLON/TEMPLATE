@@ -21,14 +21,14 @@ export function PriceCalculator({ defaultTax }: { defaultTax: number }) {
 
   return (
     <section className="card space-y-4 self-start p-5">
-      <h2 className="font-bold">Calculadora</h2>
+      <h2 className="font-bold">🧮 ¿A cuánto lo vendo?</h2>
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <label className="label">Coste sin IVA (€)</label>
+          <label className="label">¿Cuánto te cuesta a ti? (€)</label>
           <input className="input" inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
         </div>
         <div>
-          <label className="label">Margen deseado %</label>
+          <label className="label">¿Cuánto quieres ganar? (%)</label>
           <input className="input" inputMode="decimal" value={margin} onChange={(e) => setMargin(e.target.value)} />
         </div>
         <div>
@@ -37,13 +37,13 @@ export function PriceCalculator({ defaultTax }: { defaultTax: number }) {
         </div>
       </div>
       <label className="flex items-center gap-2 text-sm text-slate-700">
-        <input type="checkbox" checked={rounding} onChange={(e) => setRounding(e.target.checked)} /> Redondear a precio comercial
+        <input type="checkbox" checked={rounding} onChange={(e) => setRounding(e.target.checked)} /> Redondear a un precio bonito (ej.: 19,90)
       </label>
       <div className="rounded-lg bg-brand-50 p-4">
-        <p className="text-sm text-slate-600">Precio de venta recomendado</p>
+        <p className="text-sm text-slate-600">Véndelo a</p>
         <p className="display text-4xl tabular-nums text-brand-700">{formatMoney(Math.round(pvp * 100))}</p>
         <p className="mt-1 text-xs text-slate-600">
-          Base {formatMoney(Math.round(realBase * 100))} · margen real {realMargin.toFixed(1)} % · ganas {formatMoney(Math.round((realBase - num(cost)) * 100))} por unidad
+          Te quedas {formatMoney(Math.round((realBase - num(cost)) * 100))} por unidad ({realMargin.toFixed(0)} % de lo que cobras, sin contar el IVA)
         </p>
       </div>
     </section>

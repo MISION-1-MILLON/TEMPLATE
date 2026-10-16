@@ -39,6 +39,8 @@ model Organization {
   phone       String?
   email       String?
   invoicePrefix String @default("F")
+  /// Objetivo de ventas diario (céntimos, IVA incl.). null = se calcula solo
+  dailyGoalCents Int?
   storeEnabled Boolean @default(true)
 
   // Suscripción (Stripe). `plan` es la fuente de verdad que usa la app;

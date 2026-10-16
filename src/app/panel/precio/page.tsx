@@ -29,22 +29,22 @@ export default async function PricingPage() {
 
   return (
     <>
-      <PageHeader title="Precio" subtitle="Calcula precios con margen real y detecta lo que te está dejando poco." />
+      <PageHeader title="Calcular precios" subtitle="Descubre a cuánto vender y cuánto ganas de verdad con cada cosa." />
       <div className="grid gap-6 lg:grid-cols-3">
         <PriceCalculator defaultTax={org.taxRateBp / 100} />
         <section className="card lg:col-span-2">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-            <h2 className="font-bold">Márgenes de tu catálogo</h2>
-            <span className="text-sm text-slate-500">Margen medio: <strong>{avg.toFixed(1)} %</strong></span>
+            <h2 className="font-bold">¿Cuánto ganas con cada {sector.terms.product.toLowerCase()}?</h2>
+            <span className="text-sm text-slate-500">De media te quedas el <strong>{avg.toFixed(0)} %</strong></span>
           </div>
           <div className="overflow-x-auto">
             <table className="table">
               <thead>
                 <tr>
                   <th>{sector.terms.product}</th>
-                  <th className="text-right">Coste</th>
-                  <th className="text-right">PVP</th>
-                  <th className="text-right">Margen</th>
+                  <th className="text-right">Te costó</th>
+                  <th className="text-right">Lo vendes a</th>
+                  <th className="text-right">Ganas</th>
                   {hasReference && <th className="text-right">Ref. mercado</th>}
                 </tr>
               </thead>
@@ -52,7 +52,7 @@ export default async function PricingPage() {
                 {rows.map(({ p, margin, pct, ref }) => (
                   <tr key={p.id}>
                     <td><Link href={`/panel/productos/${p.id}`} className="hover:text-brand-600">{p.name}</Link></td>
-                    <td className="text-right tabular-nums">{p.costCents ? formatMoney(p.costCents) : <span className="text-slate-400">sin coste</span>}</td>
+                    <td className="text-right tabular-nums">{p.costCents ? formatMoney(p.costCents) : <span className="text-slate-400">¿?</span>}</td>
                     <td className="text-right tabular-nums">{formatMoney(p.priceCents)}</td>
                     <td className="text-right tabular-nums">
                       {p.costCents ? (
@@ -75,7 +75,7 @@ export default async function PricingPage() {
               </tbody>
             </table>
           </div>
-          <p className="px-5 py-3 text-xs text-slate-500">Margen sobre precio sin IVA. En rojo, por debajo del 20 %.</p>
+          <p className="px-5 py-3 text-xs text-slate-500">«Ganas» es lo que te queda después de pagar lo que te costó y el IVA. En rojo, los que te dejan menos del 20 %: plantéate subirles el precio. Si ves «¿?», añade cuánto te costó en la ficha del producto.</p>
         </section>
       </div>
     </>

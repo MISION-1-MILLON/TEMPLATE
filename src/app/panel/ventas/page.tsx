@@ -32,7 +32,7 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
   return (
     <>
       <PageHeader
-        title="Ventas y facturas"
+        title="Mis ventas"
         subtitle={`Total filtrado: ${formatMoney(agg._sum.totalCents ?? 0)} · IVA ${formatMoney(agg._sum.taxCents ?? 0)}`}
         actions={
           <>

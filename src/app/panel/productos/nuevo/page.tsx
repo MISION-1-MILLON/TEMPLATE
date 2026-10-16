@@ -12,6 +12,8 @@ export default async function NewProductPage() {
       <PageHeader title={newProductLabel(sector.terms)} />
       <ProductForm
         productLabel={sector.terms.product}
+          productFeminine={sector.terms.productFeminine}
+          examplePlaceholder={sector.demoProducts[0]?.name}
         fields={sector.productFields}
         categories={categories.map((c) => ({ id: c.id, name: c.name }))}
         defaultTaxRate={String(org.taxRateBp / 100)}

@@ -32,8 +32,8 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
   return (
     <>
       <PageHeader
-        title="Caja"
-        subtitle="Cada venta cobrada entra aquí sola. Añade a mano el cambio inicial, gastos o retiradas."
+        title="Mi dinero"
+        subtitle="Lo que entra y sale de tu negocio cada día. Las ventas se apuntan solas."
         actions={
           <form className="flex gap-2">
             <input className="input" type="date" name="dia" defaultValue={dayStr} />
@@ -42,9 +42,9 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
         }
       />
       <div className="grid gap-4 sm:grid-cols-3">
-        <Stat label="Entradas" value={formatMoney(ins)} />
-        <Stat label="Salidas" value={formatMoney(outs)} />
-        <Stat label="Saldo del día" value={formatMoney(ins + outs)} />
+        <Stat label="💚 Ha entrado" value={formatMoney(ins)} />
+        <Stat label="🔻 Ha salido" value={formatMoney(-outs)} />
+        <Stat label="🟰 Balance del día" value={formatMoney(ins + outs)} hint={ins + outs >= 0 ? "Has ganado dinero hoy" : "Hoy ha salido más de lo que ha entrado"} />
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         {Object.entries(PAYMENT_METHODS).map(([k, v]) => (
@@ -75,19 +75,20 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
           )}
         </section>
         <form action={addCashMovement} className="card space-y-3 self-start p-5">
-          <h2 className="font-bold">Movimiento manual</h2>
+          <h2 className="font-bold">Apuntar dinero a mano</h2>
+          <p className="text-xs text-slate-500">Para lo que no es una venta: el cambio de la mañana, un gasto, sacar dinero…</p>
           <select className="input" name="type" defaultValue="in">
-            <option value="in">Entrada (cambio inicial, ingreso…)</option>
-            <option value="out">Salida (gasto, retirada…)</option>
+            <option value="in">💚 He metido dinero</option>
+            <option value="out">🔻 He gastado o sacado dinero</option>
           </select>
-          <input className="input" name="concept" placeholder="Concepto" required />
+          <input className="input" name="concept" placeholder="¿Qué es? Ej.: compra de bolsas" required />
           <div className="flex gap-2">
             <input className="input" name="amount" inputMode="decimal" placeholder="0,00" required />
             <select className="input" name="method" defaultValue="cash">
               {Object.entries(PAYMENT_METHODS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
-          <button className="btn-primary w-full">Añadir</button>
+          <button className="btn-primary w-full">Apuntar</button>
         </form>
       </div>
     </>

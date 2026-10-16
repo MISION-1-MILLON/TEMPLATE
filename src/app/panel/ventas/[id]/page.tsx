@@ -9,6 +9,43 @@ import { formatMoney, formatPercent, splitTax } from "@/lib/money";
 import { invoiceNumber } from "@/lib/sales";
 import { formatDate, PAYMENT_METHODS } from "@/lib/utils";
 import { cancelSaleAction, paySaleAction } from "../actions";
+import { Celebration, type Reward } from "@/components/Celebration";
+import { getProgress, levelFor, XP_PER_SALE } from "@/lib/game";
+
+/** Qué ha conseguido el usuario con esta venta (XP, misiones, objetivo, nivel) */
+async function buildReward(
+  org: Parameters<typeof getProgress>[0],
+  sale: { totalCents: number; status: string },
+): Promise<Reward> {
+  const p = await getProgress(org);
+  const messages: string[] = [];
+  let xp = XP_PER_SALE;
+  const unlocked = (id: string, cond: boolean) => {
+    const m = p.missions.find((x) => x.id === id);
+    if (m?.done && cond) {
+      xp += m.xp;
+      messages.push(`✓ Misión: ${m.title} (+${m.xp} XP)`);
+    }
+  };
+  const countsToday = sale.status !== "cancelled";
+  const before = p.todayCents - (countsToday ? sale.totalCents : 0);
+  const goalReached = countsToday && before < p.goalCents && p.todayCents >= p.goalCents;
+  unlocked("venta", p.salesCount === 1);
+  unlocked("diez", p.salesCount === 10);
+  unlocked("cien", p.salesCount === 100);
+  unlocked("racha", p.streak === 3 && before === 0);
+  if (goalReached) messages.push("🏆 Has cumplido tu objetivo de hoy");
+  if (p.streak > 1 && before === 0) messages.push(`🔥 Racha de ${p.streak} días seguidos`);
+  const prev = levelFor(p.xp - xp);
+  return {
+    xp,
+    total: formatMoney(sale.totalCents),
+    messages,
+    goalReached,
+    levelUp: prev.level < p.level.level ? { level: p.level.level, name: p.level.name } : undefined,
+  };
+}
+
 
 export default async function SalePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ nueva?: string }> }) {
   const { id } = await params;
@@ -27,16 +64,13 @@ export default async function SalePage({ params, searchParams }: { params: Promi
     const acc = byRate.get(it.taxRateBp) ?? { base: 0, tax: 0 };
     byRate.set(it.taxRateBp, { base: acc.base + base, tax: acc.tax + tax });
   }
+  const reward = nueva && sale.status !== "cancelled" ? await buildReward(org, sale) : null;
   const isFullInvoice = Boolean(sale.customer?.taxId);
   const number = invoiceNumber(org.invoicePrefix, sale.number, sale.createdAt);
 
   return (
     <div className="mx-auto max-w-3xl">
-      {nueva && (
-        <div className="no-print mb-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-          Venta registrada. Stock{sale.status === "paid" ? ", caja" : ""} y factura actualizados.
-        </div>
-      )}
+      {reward && <Celebration reward={reward} />}
       <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-2">
         <Link href="/panel/ventas" className="btn-ghost">← Ventas</Link>
         <div className="flex flex-wrap gap-2">

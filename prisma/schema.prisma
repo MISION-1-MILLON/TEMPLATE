@@ -1,15 +1,14 @@
 // Base de datos de Nexo (PostgreSQL).
-// DATABASE_URL: conexión normal (con pooling en Neon/Supabase).
-// DATABASE_URL_UNPOOLED: conexión directa, la usan las migraciones.
+// La URL real se resuelve en scripts/db-env.mjs, que acepta los nombres de
+// variables de Neon, Vercel Postgres y Supabase.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DATABASE_URL_UNPOOLED")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ─── Cuentas y negocios ────────────────────────────────────────────────

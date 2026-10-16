@@ -13,7 +13,8 @@ if (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.length < 16) {
   fail("Falta la variable AUTH_SECRET (mínimo 16 caracteres). Añádela en Settings → Environment Variables y vuelve a desplegar.");
 }
 
-const env = { ...process.env, DATABASE_URL: url, DATABASE_URL_UNPOOLED: direct };
+// Las migraciones van por la conexión directa (sin pooling) cuando existe
+const env = { ...process.env, DATABASE_URL: direct };
 const run = (cmd) => execSync(cmd, { stdio: "inherit", env });
 
 console.log("→ Aplicando migraciones de la base de datos…");

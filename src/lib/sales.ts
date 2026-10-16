@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { db } from "./db";
 import { splitTax } from "./money";
+import { zonedParts } from "./time";
 
 export interface SaleInputItem {
   productId: string;
@@ -139,5 +140,5 @@ export async function cancelSale(orgId: string, saleId: string) {
 }
 
 export function invoiceNumber(prefix: string, number: number, date: Date) {
-  return `${prefix}${date.getFullYear()}-${String(number).padStart(5, "0")}`;
+  return `${prefix}${zonedParts(date).year}-${String(number).padStart(5, "0")}`;
 }

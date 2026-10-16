@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/money";
+import { dayRange } from "@/lib/time";
 import { invoiceNumber } from "@/lib/sales";
 import { formatDate, PAYMENT_METHODS, SALE_STATUS } from "@/lib/utils";
 
@@ -15,8 +16,8 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
   const { org } = await requireSession();
 
   const createdAt: Prisma.DateTimeFilter = {};
-  if (desde) createdAt.gte = new Date(desde);
-  if (hasta) createdAt.lt = new Date(new Date(hasta).getTime() + 86_400_000);
+  if (desde) createdAt.gte = dayRange(desde).start;
+  if (hasta) createdAt.lt = dayRange(hasta).end;
 
   const where: Prisma.SaleWhereInput = {
     orgId: org.id,

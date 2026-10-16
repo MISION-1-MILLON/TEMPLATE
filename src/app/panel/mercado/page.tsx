@@ -4,6 +4,7 @@ import { UpgradeNotice } from "@/components/UpgradeNotice";
 import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/money";
+import { zonedParts } from "@/lib/time";
 import { getModule, planIncludes } from "@/lib/modules";
 import { cn } from "@/lib/utils";
 
@@ -55,8 +56,9 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
   let profit = 0;
 
   for (const s of sales) {
-    byWeekday[(s.createdAt.getDay() + 6) % 7] += s.totalCents;
-    byHour[s.createdAt.getHours()] += s.totalCents;
+    const when = zonedParts(s.createdAt);
+    byWeekday[when.weekday] += s.totalCents;
+    byHour[when.hour] += s.totalCents;
     for (const it of s.items) {
       const line = it.unitPriceCents * it.quantity;
       const net = Math.round((line * 10000) / (10000 + it.taxRateBp));

@@ -3,6 +3,7 @@ import { PageHeader, Stat } from "@/components/PageHeader";
 import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/money";
+import { APP_TZ, dayRange, todayIso } from "@/lib/time";
 import { formatDate, PAYMENT_METHODS } from "@/lib/utils";
 import { addCashMovement } from "./actions";
 
@@ -12,9 +13,8 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
   const { dia } = await searchParams;
   const { org } = await requireSession();
 
-  const day = dia ? new Date(`${dia}T00:00:00`) : new Date(new Date().setHours(0, 0, 0, 0));
-  const next = new Date(day.getTime() + 86_400_000);
-  const dayStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+  const dayStr = dia && /^\d{4}-\d{2}-\d{2}$/.test(dia) ? dia : todayIso();
+  const { start: day, end: next } = dayRange(dayStr);
 
   const movements = await db.cashMovement.findMany({
     where: { orgId: org.id, createdAt: { gte: day, lt: next } },
@@ -64,7 +64,7 @@ export default async function CashPage({ searchParams }: { searchParams: Promise
               <tbody>
                 {movements.map((m) => (
                   <tr key={m.id}>
-                    <td className="text-slate-500">{new Intl.DateTimeFormat("es-ES", { timeStyle: "short" }).format(m.createdAt)}</td>
+                    <td className="text-slate-500">{new Intl.DateTimeFormat("es-ES", { timeStyle: "short", timeZone: APP_TZ }).format(m.createdAt)}</td>
                     <td>{m.saleId ? <Link href={`/panel/ventas/${m.saleId}`} className="hover:text-brand-600">{m.concept}</Link> : m.concept}</td>
                     <td className="text-slate-600">{PAYMENT_METHODS[m.method]}</td>
                     <td className={`text-right font-semibold tabular-nums ${m.amountCents < 0 ? "text-red-600" : ""}`}>{formatMoney(m.amountCents)}</td>

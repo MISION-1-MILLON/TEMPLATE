@@ -5,11 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "prisma migrate deploy && next build",
     "start": "next start",
-    "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:new": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "postinstall": "prisma generate"
   },
@@ -39,5 +39,8 @@
     "tailwindcss": "^3.4.19",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

@@ -10,7 +10,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const t = sector.terms;
 
   const customers = await db.customer.findMany({
-    where: { orgId: org.id, ...(q ? { OR: [{ name: { contains: q } }, { email: { contains: q } }, { phone: { contains: q } }] } : {}) },
+    where: { orgId: org.id, ...(q ? { OR: [{ name: { contains: q, mode: "insensitive" as const } }, { email: { contains: q, mode: "insensitive" as const } }, { phone: { contains: q } }] } : {}) },
     orderBy: { name: "asc" },
     take: 500,
   });

@@ -16,7 +16,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     orgId: org.id,
     active: archived !== "1",
     ...(cat ? { categoryId: cat } : {}),
-    ...(q ? { OR: [{ name: { contains: q } }, { sku: { contains: q } }] } : {}),
+    ...(q ? { OR: [{ name: { contains: q, mode: "insensitive" as const } }, { sku: { contains: q, mode: "insensitive" as const } }] } : {}),
   };
   const [products, categories] = await Promise.all([
     db.product.findMany({ where, orderBy: { name: "asc" }, include: { category: true }, take: 500 }),

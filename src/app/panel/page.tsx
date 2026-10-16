@@ -3,6 +3,7 @@ import { EmptyState, PageHeader, Stat } from "@/components/PageHeader";
 import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/money";
+import { startOfMonth, startOfToday } from "@/lib/time";
 import { formatDate, PAYMENT_METHODS } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 
@@ -12,14 +13,13 @@ export default async function Dashboard() {
   const { org, user, sector } = await requireSession();
   const t = sector.terms;
 
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfDay = startOfToday();
+  const monthStart = startOfMonth();
   const valid = { orgId: org.id, status: { not: "cancelled" } };
 
   const [today, month, pending, lowStock, productCount, recent] = await Promise.all([
     db.sale.aggregate({ where: { ...valid, createdAt: { gte: startOfDay } }, _sum: { totalCents: true }, _count: true }),
-    db.sale.aggregate({ where: { ...valid, createdAt: { gte: startOfMonth } }, _sum: { totalCents: true }, _count: true }),
+    db.sale.aggregate({ where: { ...valid, createdAt: { gte: monthStart } }, _sum: { totalCents: true }, _count: true }),
     db.sale.aggregate({ where: { orgId: org.id, status: "pending" }, _sum: { totalCents: true }, _count: true }),
     db.$queryRaw<Array<{ id: string; name: string; stock: number }>>`
       SELECT id, name, stock FROM "Product"

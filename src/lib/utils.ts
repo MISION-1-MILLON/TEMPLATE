@@ -1,3 +1,5 @@
+import { APP_TZ } from "./time";
+
 export function slugify(input: string) {
   return input
     .normalize("NFD")
@@ -14,6 +16,7 @@ export function cn(...classes: Array<string | false | null | undefined>) {
 
 export function formatDate(d: Date, withTime = false) {
   return new Intl.DateTimeFormat("es-ES", {
+    timeZone: APP_TZ,
     dateStyle: "short",
     ...(withTime ? { timeStyle: "short" } : {}),
   }).format(d);

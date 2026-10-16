@@ -42,6 +42,10 @@ model Organization {
   /// Objetivo de ventas diario (céntimos, IVA incl.). null = se calcula solo
   dailyGoalCents Int?
   storeEnabled   Boolean @default(true)
+  /// Participa en la bolsa común de productos (solo se comparte el precio de venta)
+  poolShare      Boolean @default(true)
+  /// En la bolsa aparece con su nombre y enlace a su tienda (si no, "Un negocio de <ciudad>")
+  poolPublic     Boolean @default(false)
 
   // Suscripción (Stripe). `plan` es la fuente de verdad que usa la app;
   // el webhook de Stripe la mantiene sincronizada.
@@ -109,6 +113,8 @@ model Product {
   /// Campos propios del sector (talla, colorway, alérgenos, km…)
   attributes  Json
   published   Boolean  @default(true)
+  /// Producto de ejemplo cargado al registrarse: no entra en la bolsa común
+  isDemo      Boolean  @default(false)
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

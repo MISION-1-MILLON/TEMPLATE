@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import { latestCompetitorPrices, marketStats, POSITION_INFO, type MarketPosition } from "@/lib/market";
 import { formatMoney } from "@/lib/money";
 import { DAILY_LIMIT, lastSearchedAt, searchesLeftToday } from "@/lib/research";
+import { poolMatches } from "@/lib/pool";
 import { cn, formatDate } from "@/lib/utils";
 import { deleteCompetitor, searchAllProducts, searchProduct } from "./actions";
 
@@ -23,14 +24,21 @@ export default async function CompetitionPage({ searchParams }: { searchParams: 
   const t = sector.terms;
 
   const [products, competitors, latest, searched, left] = await Promise.all([
-    db.product.findMany({ where: { orgId: org.id, active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, priceCents: true } }),
+    db.product.findMany({ where: { orgId: org.id, active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, priceCents: true, attributes: true } }),
     db.competitor.findMany({ where: { orgId: org.id }, orderBy: { name: "asc" }, include: { _count: { select: { prices: true } } } }),
     latestCompetitorPrices(org.id),
     lastSearchedAt(org.id, "market"),
     searchesLeftToday(org),
   ]);
 
-  const rows = products.map((p) => ({ p, stats: marketStats(p.priceCents, latest.get(p.id) ?? []), when: searched.get(p.id) }));
+  // Precios de internet + precios de la bolsa de otros negocios de la plataforma
+  const pool = await poolMatches(org.id, products);
+  const rows = products.map((p) => ({
+    p,
+    stats: marketStats(p.priceCents, [...(latest.get(p.id) ?? []), ...(pool.get(p.id) ?? [])]),
+    when: searched.get(p.id),
+    inPool: pool.get(p.id)?.length ?? 0,
+  }));
   const compared = rows.filter((r) => r.stats.count > 0);
   const cheaper = compared.filter((r) => ["cheapest", "below"].includes(r.stats.position)).length;
   const pricier = compared.filter((r) => ["above", "most_expensive"].includes(r.stats.position)).length;
@@ -43,7 +51,7 @@ export default async function CompetitionPage({ searchParams }: { searchParams: 
 
   return (
     <>
-      <PageHeader title="Competencia" subtitle="Buscamos en internet a cuánto venden lo mismo que tú y te decimos si estás caro o barato." />
+      <PageHeader title="Competencia" subtitle="Comparamos tus precios con otros negocios de la plataforma y con internet, y te decimos si estás caro o barato." />
 
       <section className="card mb-6 flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-sky-50 to-white p-5">
         <div className="max-w-xl">
@@ -86,7 +94,7 @@ export default async function CompetitionPage({ searchParams }: { searchParams: 
             <p className="card p-6 text-sm text-slate-600">Nada por aquí. 👌</p>
           ) : (
             <ul className="space-y-2">
-              {filtered.map(({ p, stats, when }) => {
+              {filtered.map(({ p, stats, when, inPool }) => {
                 const info = POSITION_INFO[stats.position];
                 return (
                   <li key={p.id} className="card p-4">
@@ -115,7 +123,11 @@ export default async function CompetitionPage({ searchParams }: { searchParams: 
                         <span className="text-sm text-slate-500">Sin datos todavía</span>
                       )}
                     </div>
-                    {when && <p className="mt-2 text-[11px] text-slate-400">Buscado el {formatDate(when)}</p>}
+                    {(when || inPool > 0) && (
+                      <p className="mt-2 text-[11px] text-slate-400">
+                        {[inPool > 0 && `🤝 ${inPool} en la bolsa`, when && `🔎 buscado en internet el ${formatDate(when)}`].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
                   </li>
                 );
               })}

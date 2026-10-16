@@ -19,7 +19,33 @@ const BUSINESS: Record<string, string> = {
 };
 const rand = (n: number) => Math.floor(Math.random() * n);
 
+/** Negocios de ejemplo (sin usuario) que llenan la bolsa común en la demo */
+const POOL_ORGS: Array<{ name: string; sector: string; city: string; pub: boolean; products: Array<[string, string, number, Record<string, unknown>?]> }> = [
+  { name: "Urban Kicks", sector: "zapatillas", city: "Madrid", pub: true, products: [["Nike Air Max 90 Infrared", "Lifestyle", 139.95, { marca: "Nike" }], ["Adidas Samba OG", "Lifestyle", 115, { marca: "Adidas" }], ["New Balance 550", "Lifestyle", 129.99, { marca: "New Balance" }], ["Air Force 1 '07", "Lifestyle", 119.99, { marca: "Nike" }]] },
+  { name: "Sneaker Corner", sector: "zapatillas", city: "Valencia", pub: false, products: [["Air Max 90", "Lifestyle", 154.9, { marca: "Nike" }], ["Gel-Kayano 14 Cream", "Running", 149, { marca: "Asics" }], ["Jordan 1 High Chicago", "Ediciones limitadas", 399, { marca: "Jordan" }], ["Vans Old Skool", "Skate", 75, { marca: "Vans" }]] },
+  { name: "Run & Go", sector: "zapatillas", city: "Barcelona", pub: true, products: [["Gel-Kayano 14", "Running", 165, { marca: "Asics" }], ["Nike Pegasus 41", "Running", 139.99, { marca: "Nike" }], ["New Balance 1080", "Running", 179.99, { marca: "New Balance" }]] },
+  { name: "Bar El Rincón", sector: "restauracion", city: "Madrid", pub: true, products: [["Croquetas de jamón (6 uds)", "Entrantes", 8.5], ["Patatas bravas", "Entrantes", 5.9], ["Tortilla de patatas", "Entrantes", 3.2], ["Caña", "Bebidas", 2.2]] },
+  { name: "Mesón Castilla", sector: "restauracion", city: "Madrid", pub: false, products: [["Patatas bravas", "Entrantes", 7], ["Tarta de queso", "Postres", 6.5], ["Caña", "Bebidas", 2.8], ["Huevos rotos con jamón", "Principales", 12.5]] },
+  { name: "Lola Boutique", sector: "moda", city: "Sevilla", pub: true, products: [["Camiseta básica oversize", "Camisetas", 19.95], ["Vaquero recto", "Pantalones", 54.9], ["Vestido de lino", "Vestidos", 45]] },
+  { name: "Moda Norte", sector: "moda", city: "Bilbao", pub: false, products: [["Camiseta básica oversize blanca", "Camisetas", 22], ["Abrigo de paño camel", "Abrigos", 129], ["Jersey de punto", "Abrigos", 39.9]] },
+  { name: "Autos del Este", sector: "motor", city: "Valencia", pub: true, products: [["Volkswagen Golf 1.5 TSI Life", "Turismos", 22900, { marca: "Volkswagen" }], ["Seat León 1.5 TSI", "Turismos", 19500, { marca: "Seat" }]] },
+];
+
+async function seedPoolOrgs() {
+  for (const o of POOL_ORGS) {
+    const slug = o.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-");
+    await db.organization.deleteMany({ where: { slug } });
+    const org = await db.organization.create({ data: { name: o.name, slug, sector: o.sector, address: `Calle Mayor 10, ${o.city}`, poolPublic: o.pub } });
+    for (const [name, category, price, attributes] of o.products) {
+      const cat = await db.category.upsert({ where: { orgId_name: { orgId: org.id, name: category } }, create: { orgId: org.id, name: category }, update: {} });
+      await db.product.create({ data: { orgId: org.id, name, categoryId: cat.id, priceCents: Math.round(price * 100), stock: 5, attributes: (attributes ?? {}) as object } });
+    }
+  }
+  console.log(`✔ Bolsa: ${POOL_ORGS.length} negocios de ejemplo`);
+}
+
 async function main() {
+  await seedPoolOrgs();
   for (const sector of SECTOR_LIST) {
     const email = `demo+${sector.id}@nexo.app`;
     const existing = await db.user.findUnique({ where: { email } });

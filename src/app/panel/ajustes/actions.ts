@@ -42,6 +42,17 @@ export async function saveSettings(_: SettingsState, form: FormData): Promise<Se
   return { ok: "Cambios guardados" };
 }
 
+/** Participación en la bolsa común de productos */
+export async function savePoolSettings(form: FormData) {
+  const { org, role } = await requireSession();
+  if (role === "staff") return;
+  await db.organization.update({
+    where: { id: org.id },
+    data: { poolShare: form.get("poolShare") === "on", poolPublic: form.get("poolPublic") === "on" },
+  });
+  revalidatePath("/panel", "layout");
+}
+
 /** Cambiar de sector no borra nada: los campos extra viven en JSON y se añaden las categorías del nuevo sector. */
 export async function changeSector(form: FormData) {
   const { org, role } = await requireSession();

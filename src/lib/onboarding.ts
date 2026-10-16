@@ -68,6 +68,7 @@ export async function seedSectorData(tx: Prisma.TransactionClient, orgId: string
         stock: p.stock,
         trackStock: sector.trackStockByDefault,
         attributes: p.attributes as Prisma.InputJsonValue,
+        isDemo: true,
       },
     });
     if (p.stock > 0 && sector.trackStockByDefault) {

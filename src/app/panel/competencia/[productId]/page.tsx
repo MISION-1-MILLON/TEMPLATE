@@ -8,12 +8,13 @@ import { latestCompetitorPrices, marketStats, POSITION_INFO } from "@/lib/market
 import { formatMoney, splitTax } from "@/lib/money";
 import { cn, formatDate } from "@/lib/utils";
 import { deleteCompetitorPrice, searchProduct, setMyPrice } from "../actions";
+import { poolMatches } from "@/lib/pool";
 import { SearchButton } from "@/components/SearchButton";
 import { aiEnabled } from "@/lib/ai-research";
 
 export const maxDuration = 300;
 
-const KIND_ICON: Record<string, string> = { fisica: "🏬", online: "🌐", marketplace: "🛍️" };
+const KIND_ICON: Record<string, string> = { fisica: "🏬", online: "🌐", marketplace: "🛍️", bolsa: "🤝" };
 
 export default async function ProductBenchmark({ params }: { params: Promise<{ productId: string }> }) {
   const { productId } = await params;
@@ -30,7 +31,11 @@ export default async function ProductBenchmark({ params }: { params: Promise<{ p
   ]);
   if (!product) notFound();
 
-  const prices = latestMap.get(product.id) ?? [];
+  const poolList = (await poolMatches(org.id, [product])).get(product.id) ?? [];
+  const prices = [
+    ...(latestMap.get(product.id) ?? []),
+    ...poolList.map((x) => ({ id: `pool-${x.id}`, competitorId: x.orgId, competitorName: x.seller, competitorKind: "bolsa", priceCents: x.priceCents, url: x.sellerUrl, note: x.name, observedAt: null as Date | null })),
+  ];
   // En el historial solo interesan los cambios de precio de cada tienda
   const changes = [...history].reverse().filter((h, i, arr) => {
     const prev = arr.slice(0, i).reverse().find((x) => x.competitorId === h.competitorId);
@@ -69,7 +74,7 @@ export default async function ProductBenchmark({ params }: { params: Promise<{ p
         <section className="card p-5 lg:col-span-2">
           <h2 className="font-bold">🏁 Ranking de precios</h2>
           <p className="mb-4 text-sm text-slate-500">
-            {stats.count ? `Estás en el puesto ${stats.rank} de ${stats.count + 1} (1 = el más barato).` : "Todavía no hemos encontrado este producto en otras tiendas."}
+            {stats.count ? `Estás en el puesto ${stats.rank} de ${stats.count + 1} (1 = el más barato).` : "Todavía no hemos encontrado este producto en otros negocios ni en internet."}
           </p>
           {stats.count > 0 && <div className="mb-5"><MarketBar my={product.priceCents} min={stats.min} max={stats.max} avg={stats.avg} /></div>}
           <ol className="space-y-1.5">
@@ -81,7 +86,11 @@ export default async function ProductBenchmark({ params }: { params: Promise<{ p
                   <span className={cn("block truncate", r.me ? "font-bold text-brand-700" : "font-medium")}>
                     {r.url ? <a href={r.url} target="_blank" className="hover:underline">{r.name} ↗</a> : r.name}
                   </span>
-                  {r.date && <span className="block truncate text-xs text-slate-500">{r.title ? `«${r.title}» · ` : ""}visto el {formatDate(r.date)}</span>}
+                  {(r.date || r.title) && !r.me && (
+                    <span className="block truncate text-xs text-slate-500">
+                      {r.title ? `«${r.title}»` : ""}{r.date ? ` · visto en internet el ${formatDate(r.date)}` : " · en la bolsa"}
+                    </span>
+                  )}
                 </span>
                 <span className="font-bold tabular-nums">{formatMoney(r.price)}</span>
               </li>

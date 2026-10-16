@@ -54,6 +54,12 @@ export async function changeSector(form: FormData) {
   revalidatePath("/panel", "layout");
 }
 
+/** Vuelve a Ajustes con el motivo que da Stripe (solo lo ve el dueño del negocio) */
+function errorUrl(e: unknown) {
+  const detail = e instanceof Error ? e.message.slice(0, 300) : "";
+  return `/panel/ajustes?pago=error${detail ? `&detalle=${encodeURIComponent(detail)}` : ""}#plan`;
+}
+
 async function origin() {
   const h = await headers();
   return `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
@@ -89,7 +95,7 @@ export async function changePlan(form: FormData) {
     }
   } catch (e) {
     console.error("[stripe] changePlan", e);
-    target = "/panel/ajustes?pago=error#plan";
+    target = errorUrl(e);
   }
   revalidatePath("/panel", "layout");
   if (target) redirect(target);
@@ -110,7 +116,7 @@ export async function openBillingPortal() {
     url = await createPortalUrl(org.stripeCustomerId, await origin());
   } catch (e) {
     console.error("[stripe] portal", e);
-    url = "/panel/ajustes?pago=error#plan";
+    url = errorUrl(e);
   }
   redirect(url);
 }

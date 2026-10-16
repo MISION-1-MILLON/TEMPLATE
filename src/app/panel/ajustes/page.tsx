@@ -7,8 +7,8 @@ import { SettingsForm } from "./SettingsForm";
 
 export const metadata = { title: "Ajustes" };
 
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ pago?: string }> }) {
-  const { pago } = await searchParams;
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ pago?: string; detalle?: string }> }) {
+  const { pago, detalle } = await searchParams;
   const { org, sector } = await requireSession();
   return (
     <>
@@ -34,7 +34,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           </form>
         </section>
 
-        <BillingSection org={org} status={pago} />
+        <BillingSection org={org} status={pago} detail={detalle} />
       </div>
     </>
   );

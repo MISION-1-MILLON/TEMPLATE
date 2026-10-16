@@ -12,7 +12,7 @@ const MESSAGES: Record<string, { tone: "ok" | "warn" | "error"; text: string }> 
   "no-configurado": { tone: "error", text: "Los pagos aún no están configurados en este servidor." },
 };
 
-export function BillingSection({ org, status }: { org: Organization; status?: string }) {
+export function BillingSection({ org, status, detail }: { org: Organization; status?: string; detail?: string }) {
   const enabled = billingEnabled();
   const msg = status ? MESSAGES[status] : undefined;
   const current = PLANS.find((p) => p.id === org.plan) ?? PLANS[0];
@@ -43,6 +43,7 @@ export function BillingSection({ org, status }: { org: Organization; status?: st
           msg.tone === "warn" && "bg-amber-50 text-amber-800",
           msg.tone === "error" && "bg-red-50 text-red-700")}>
           {msg.text}
+          {detail && <span className="mt-1 block text-xs opacity-80">Detalle de Stripe: {detail}</span>}
         </p>
       )}
       {org.subscriptionStatus === "past_due" && (

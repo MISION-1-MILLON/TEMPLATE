@@ -1,6 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { billingEnabled, createCheckoutUrl, createPortalUrl, setCancelAtPeriodEnd, switchSubscriptionPlan, type PaidPlan } from "@/lib/billing";
 import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { seedSectorData } from "@/lib/onboarding";
@@ -51,11 +54,63 @@ export async function changeSector(form: FormData) {
   revalidatePath("/panel", "layout");
 }
 
-/** TODO: sustituir por Stripe Checkout + webhook. De momento cambia el plan directamente para poder probar. */
+async function origin() {
+  const h = await headers();
+  return `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+}
+
+/**
+ * Cambio de plan.
+ * - Con Stripe: contratar abre el pago de Stripe; cambiar entre Pro y Business
+ *   actualiza la suscripción; pasar a Gratis la cancela al final del periodo.
+ * - Sin Stripe (solo en desarrollo): cambia el plan directamente para poder probar.
+ */
 export async function changePlan(form: FormData) {
-  const { org, role } = await requireSession();
+  const { org, role, user } = await requireSession();
   const plan = String(form.get("plan") ?? "");
   if (role === "staff" || !["free", "pro", "business"].includes(plan)) return;
-  await db.organization.update({ where: { id: org.id }, data: { plan } });
+
+  if (!billingEnabled()) {
+    if (process.env.NODE_ENV === "production") redirect("/panel/ajustes?pago=no-configurado#plan");
+    await db.organization.update({ where: { id: org.id }, data: { plan } });
+    revalidatePath("/panel", "layout");
+    return;
+  }
+
+  const hasSubscription = Boolean(org.stripeSubscriptionId) && org.subscriptionStatus !== "canceled";
+  let target: string | null = null;
+  try {
+    if (plan === "free") {
+      if (hasSubscription) await setCancelAtPeriodEnd(org.stripeSubscriptionId!, true);
+    } else if (hasSubscription) {
+      await switchSubscriptionPlan(org.stripeSubscriptionId!, plan as PaidPlan);
+    } else {
+      target = await createCheckoutUrl(org, user.email, plan as PaidPlan, await origin());
+    }
+  } catch (e) {
+    console.error("[stripe] changePlan", e);
+    target = "/panel/ajustes?pago=error#plan";
+  }
   revalidatePath("/panel", "layout");
+  if (target) redirect(target);
+}
+
+export async function resumeSubscription() {
+  const { org, role } = await requireSession();
+  if (role === "staff" || !org.stripeSubscriptionId || !billingEnabled()) return;
+  await setCancelAtPeriodEnd(org.stripeSubscriptionId, false);
+  revalidatePath("/panel", "layout");
+}
+
+export async function openBillingPortal() {
+  const { org, role } = await requireSession();
+  if (role === "staff" || !org.stripeCustomerId || !billingEnabled()) return;
+  let url: string;
+  try {
+    url = await createPortalUrl(org.stripeCustomerId, await origin());
+  } catch (e) {
+    console.error("[stripe] portal", e);
+    url = "/panel/ajustes?pago=error#plan";
+  }
+  redirect(url);
 }

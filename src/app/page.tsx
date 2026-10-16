@@ -130,7 +130,7 @@ export default function Home() {
       <section id="precios" className="bg-slate-50 py-20">
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="display text-center text-3xl sm:text-4xl">Precios claros</h2>
-          <p className="mt-3 text-center text-slate-600">Empieza gratis y sube de plan cuando lo necesites. IVA no incluido.</p>
+          <p className="mt-3 text-center text-slate-600">Empieza gratis y sube de plan cuando lo necesites. Los planes de pago incluyen 14 días de prueba. IVA no incluido.</p>
           <div className="mt-10 grid gap-4 md:grid-cols-3">
             {PLANS.map((p) => (
               <div key={p.id} className={`card flex flex-col p-6 ${p.highlighted ? "ring-2 ring-brand-600" : ""}`}>
@@ -149,7 +149,7 @@ export default function Home() {
                   ))}
                 </ul>
                 <Link href="/registro" className={`${p.highlighted ? "btn-primary" : "btn-secondary"} mt-6 uppercase`}>
-                  {p.priceMonthly === 0 ? "Empieza gratis" : `Probar ${p.name}`}
+                  {p.priceMonthly === 0 ? "Empieza gratis" : `Probar 14 días gratis`}
                 </Link>
               </div>
             ))}

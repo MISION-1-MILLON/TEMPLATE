@@ -44,6 +44,29 @@ Cada `git push` a `main` vuelve a publicar la app automáticamente. Para usar tu
 
 Opcional: `NEXT_PUBLIC_APP_TIMEZONE` (por defecto `Europe/Madrid`).
 
+## Cobro de suscripciones (Stripe)
+
+Contratar un plan abre la página de pago de Stripe, con 14 días de prueba gratis la primera vez. Stripe avisa a la app
+mediante un webhook y la app activa, cambia o cancela el plan automáticamente. El cliente gestiona su tarjeta, sus facturas
+y la cancelación desde el portal de Stripe (botón «Tarjeta y facturas» en Ajustes).
+
+No hace falta crear productos ni precios en Stripe: se crean solos la primera vez que alguien contrata.
+
+1. Crea una cuenta en https://dashboard.stripe.com y deja activado el **modo de prueba** (*Test mode*).
+2. **Developers → API keys**: copia la *Secret key* (`sk_test_…`).
+3. **Developers → Webhooks → Add endpoint**:
+   - URL: `https://<tu-dominio>/api/stripe/webhook`
+   - Eventos: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`,
+     `customer.subscription.deleted`
+   - Copia el *Signing secret* (`whsec_…`).
+4. **Settings → Billing → Customer portal**: pulsa **Save** (o *Activate*) para activar el portal de clientes.
+5. En Vercel, *Settings → Environment Variables*: añade `STRIPE_SECRET_KEY` y `STRIPE_WEBHOOK_SECRET` y vuelve a desplegar.
+6. Prueba a contratar con la tarjeta de prueba `4242 4242 4242 4242` (cualquier fecha futura y cualquier CVC).
+
+Para cobrar de verdad, repite los pasos 2–5 en **modo real** (*Live*) con las claves `sk_live_…`.
+
+Sin `STRIPE_SECRET_KEY`: en local el cambio de plan es inmediato (para desarrollar); en producción queda bloqueado.
+
 ## Desarrollo en local
 
 Requisitos: Node 20 o superior y un PostgreSQL (local o una base de datos gratuita de Neon).
@@ -93,7 +116,8 @@ prisma/seed.ts            datos demo
 
 ## Próximos pasos (hoja de ruta)
 
-- [ ] **Cobro de suscripciones con Stripe** (Checkout y webhook). Hoy el cambio de plan en Ajustes es inmediato y sin cobro.
+- [x] Cobro de suscripciones con Stripe (Checkout, webhook, portal de cliente y prueba de 14 días).
+- [ ] IVA automático con Stripe Tax y emails de aviso (fin de prueba, pago fallido).
 - [ ] **Facturación legal en España**: Verifactu / TicketBAI y numeración inalterable. Hoy la factura es imprimible, pero no está certificada.
 - [ ] Equipo: invitar usuarios con rol (el modelo `Membership` ya lo soporta) y varios locales.
 - [ ] Variantes de producto (una zapatilla con varias tallas, cada una con su stock).

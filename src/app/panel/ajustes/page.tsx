@@ -1,14 +1,14 @@
 import { PageHeader } from "@/components/PageHeader";
 import { requireSession } from "@/lib/auth";
-import { PLANS } from "@/lib/modules";
-import { cn } from "@/lib/utils";
 import { SECTOR_LIST } from "@/sectors";
-import { changePlan, changeSector } from "./actions";
+import { changeSector } from "./actions";
+import { BillingSection } from "./BillingSection";
 import { SettingsForm } from "./SettingsForm";
 
 export const metadata = { title: "Ajustes" };
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ pago?: string }> }) {
+  const { pago } = await searchParams;
   const { org, sector } = await requireSession();
   return (
     <>
@@ -34,22 +34,7 @@ export default async function SettingsPage() {
           </form>
         </section>
 
-        <section id="plan" className="card p-6">
-          <h2 className="font-bold">Plan</h2>
-          <p className="mt-1 text-sm text-slate-500">El cobro con tarjeta (Stripe) está pendiente de conectar; de momento el cambio es inmediato.</p>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            {PLANS.map((p) => (
-              <form key={p.id} action={changePlan} className={cn("rounded-xl border p-4", org.plan === p.id ? "border-brand-600 ring-1 ring-brand-600" : "border-slate-200")}>
-                <input type="hidden" name="plan" value={p.id} />
-                <p className="display text-xl uppercase">{p.name}</p>
-                <p className="text-sm text-slate-500">{p.priceMonthly} €/mes</p>
-                <button className="btn-secondary mt-3 w-full" disabled={org.plan === p.id}>
-                  {org.plan === p.id ? "Plan actual" : "Cambiar"}
-                </button>
-              </form>
-            ))}
-          </div>
-        </section>
+        <BillingSection org={org} status={pago} />
       </div>
     </>
   );

@@ -40,6 +40,15 @@ model Organization {
   email       String?
   invoicePrefix String @default("F")
   storeEnabled Boolean @default(true)
+
+  // Suscripción (Stripe). `plan` es la fuente de verdad que usa la app;
+  // el webhook de Stripe la mantiene sincronizada.
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  /// active | trialing | past_due | canceled | incomplete…
+  subscriptionStatus   String?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
   createdAt   DateTime @default(now())
 
   memberships    Membership[]

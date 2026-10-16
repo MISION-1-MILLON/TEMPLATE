@@ -3,8 +3,9 @@ import { db } from "@/lib/db";
 import { refreshStale } from "@/lib/research";
 
 /**
- * Tarea diaria (Vercel Cron, ver vercel.json): actualiza los precios de
- * competencia y proveedores que lleven más de una semana sin revisarse.
+ * Revisión de la matriz (Vercel Cron diario, ver vercel.json): cada día revisa lo
+ * que lleve más de 30 días sin buscarse, así cada cliente recibe una revisión
+ * mensual gratis (no gasta su cupo). La caché compartida evita repetir búsquedas.
  * Vercel envía "Authorization: Bearer $CRON_SECRET".
  */
 export const maxDuration = 300;
@@ -24,7 +25,7 @@ export async function GET(req: Request) {
   const report: Array<{ org: string; processed: number; pending: number }> = [];
   for (const org of orgs) {
     if (Date.now() > deadline) break;
-    const r = await refreshStale(org, { kind: "both", max: 6, deadline });
+    const r = await refreshStale(org, { kind: "both", max: 25, deadline, central: true, concurrency: 3 });
     if (r.processed || r.pending) report.push({ org: org.slug, ...r });
   }
   return Response.json({ ok: true, report });

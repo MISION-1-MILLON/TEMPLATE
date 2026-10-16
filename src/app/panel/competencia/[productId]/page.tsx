@@ -120,7 +120,7 @@ export default async function ProductBenchmark({ params }: { params: Promise<{ p
           {aiEnabled() && (
             <section className="card p-5">
               <h2 className="mb-1 font-bold">🔎 Actualizar precios</h2>
-              <p className="mb-3 text-xs text-slate-500">Lo revisamos solos cada semana, pero puedes buscar ahora mismo.</p>
+              <p className="mb-3 text-xs text-slate-500">Lo revisamos gratis una vez al mes. Si quieres, busca ahora (usa una de tus búsquedas extra del día).</p>
               <SearchButton action={searchProduct.bind(null, product.id)} label="Buscar en internet ahora" className="btn-primary w-full" />
             </section>
           )}

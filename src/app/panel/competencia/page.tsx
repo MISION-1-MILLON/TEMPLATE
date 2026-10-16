@@ -50,7 +50,7 @@ export default async function CompetitionPage({ searchParams }: { searchParams: 
           <p className="font-bold">🔎 Búsqueda automática en internet</p>
           <p className="text-sm text-slate-600">
             {enabled
-              ? `Revisamos tus ${t.products.toLowerCase()} solos cada semana. Te quedan ${left} de ${DAILY_LIMIT[org.plan] ?? DAILY_LIMIT.free} búsquedas hoy.`
+              ? `Revisamos gratis los precios de tus ${t.products.toLowerCase()} una vez al mes, sin que hagas nada. Si quieres buscar antes, te quedan ${left} de ${DAILY_LIMIT[org.plan] ?? DAILY_LIMIT.free} búsquedas extra hoy.`
               : "Pendiente de activar: falta configurar la clave de búsqueda en el servidor."}
           </p>
         </div>

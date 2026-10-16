@@ -14,7 +14,8 @@ export async function searchProduct(productId: string): Promise<SearchResult> {
   const { org } = await requireSession();
   if (!aiEnabled()) return { error: "La búsqueda automática aún no está activada en este servidor." };
   try {
-    const n = await refreshProductMarket(org, productId);
+    // A mano: vale la caché si es de esta semana (gratis); si no, se busca de nuevo
+    const n = await refreshProductMarket(org, productId, { maxAgeDays: 7 });
     revalidatePath("/panel/competencia");
     revalidatePath(`/panel/competencia/${productId}`);
     return { ok: n ? `¡Listo! He encontrado ${n} ${n === 1 ? "precio" : "precios"} en internet.` : "No he encontrado este producto a la venta en internet." };
@@ -31,7 +32,7 @@ export async function searchAllProducts(): Promise<SearchResult> {
   if (left <= 0) return { error: new QuotaError("Has llegado al límite de búsquedas de hoy. Mañana seguimos.").message };
   const started = Date.now();
   after(async () => {
-    await refreshStale(org, { kind: "market", max: Math.min(left, 12), deadline: started + 240_000 });
+    await refreshStale(org, { kind: "market", max: Math.min(left, 12), deadline: started + 240_000, concurrency: 3 });
   });
   return { ok: "Buscando en internet en segundo plano. Vuelve en unos minutos y verás los precios." };
 }

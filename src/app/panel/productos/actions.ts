@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { aiEnabled } from "@/lib/ai-research";
-import { refreshProductMarket, searchesLeftToday } from "@/lib/research";
+import { refreshProductMarket } from "@/lib/research";
 import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth";
 import { readAttributes } from "@/lib/attributes";
@@ -74,8 +74,8 @@ export async function saveProduct(productId: string | null, _: ProductFormState,
       return p;
     });
     // Nada más darlo de alta, buscamos en internet a cuánto lo vende la competencia
-    if (aiEnabled() && (await searchesLeftToday(org)) > 0) {
-      after(() => refreshProductMarket(org, created.id).then(() => undefined, () => undefined));
+    if (aiEnabled()) {
+      after(() => refreshProductMarket(org, created.id, { central: true }).then(() => undefined, () => undefined));
     }
   }
 

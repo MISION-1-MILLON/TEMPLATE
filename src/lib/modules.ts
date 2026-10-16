@@ -105,7 +105,7 @@ export const PLANS: Plan[] = [
     name: "Gratis",
     priceMonthly: 0,
     blurb: "Para empezar a ordenar el negocio.",
-    features: ["Hasta 50 productos", "Ventas y facturas ilimitadas", "Tienda / carta online", "Calculadora de precios", "1 usuario"],
+    features: ["Hasta 50 productos", "Ventas y facturas ilimitadas", "Revisión mensual gratis de competencia y proveedores", "Tienda / carta online", "1 usuario"],
   },
   {
     id: "pro",

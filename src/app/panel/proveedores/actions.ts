@@ -17,9 +17,9 @@ export async function detectSuppliesAction(): Promise<SearchResult> {
   if (!aiEnabled()) return { error: OFF };
   try {
     const created = await detectAndCreateSupplies(org);
-    const left = await searchesLeftToday(org);
+    // La primera búsqueda de proveedores la paga la matriz
     const started = Date.now();
-    if (left > 0) after(() => refreshStale(org, { kind: "supplier", max: Math.min(left, 10), deadline: started + 240_000 }).then(() => undefined));
+    after(() => refreshStale(org, { kind: "supplier", max: 20, deadline: started + 240_000, central: true, concurrency: 3 }).then(() => undefined));
     revalidatePath("/panel/proveedores");
     return { ok: created ? `He detectado ${created} cosas que compras. Ahora busco proveedores en segundo plano: vuelve en unos minutos.` : "Ya tenía todo lo que compras en la lista." };
   } catch (e) {
@@ -31,7 +31,7 @@ export async function searchSupplyItem(itemId: string): Promise<SearchResult> {
   const { org } = await requireSession();
   if (!aiEnabled()) return { error: OFF };
   try {
-    const n = await refreshSupplyItem(org, itemId);
+    const n = await refreshSupplyItem(org, itemId, { maxAgeDays: 7 });
     revalidatePath("/panel/proveedores");
     return { ok: n ? `¡Listo! ${n} ${n === 1 ? "proveedor encontrado" : "proveedores encontrados"}.` : "No he encontrado proveedores con precio público para esto." };
   } catch (e) {
@@ -45,7 +45,7 @@ export async function searchAllSupplies(): Promise<SearchResult> {
   const left = await searchesLeftToday(org);
   if (left <= 0) return { error: "Has llegado al límite de búsquedas de hoy. Mañana seguimos." };
   const started = Date.now();
-  after(() => refreshStale(org, { kind: "supplier", max: Math.min(left, 12), deadline: started + 240_000 }).then(() => undefined));
+  after(() => refreshStale(org, { kind: "supplier", max: Math.min(left, 12), deadline: started + 240_000, concurrency: 3 }).then(() => undefined));
   return { ok: "Buscando proveedores en segundo plano. Vuelve en unos minutos." };
 }
 
@@ -73,8 +73,8 @@ export async function addSupplyItem(form: FormData) {
     create: { orgId: org.id, name, unit },
     update: {},
   });
-  if (aiEnabled() && (await searchesLeftToday(org)) > 0) {
-    after(() => refreshSupplyItem(org, item.id).then(() => undefined, () => undefined));
+  if (aiEnabled()) {
+    after(() => refreshSupplyItem(org, item.id, { central: true }).then(() => undefined, () => undefined));
   }
   revalidatePath("/panel/proveedores");
 }

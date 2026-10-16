@@ -312,6 +312,10 @@ model AiSearch {
   kind      String
   targetId  String?
   ok        Boolean
+  /// Búsqueda de la matriz (revisión mensual / automática): no gasta el cupo del cliente
+  central   Boolean  @default(false)
+  /// Resultado sacado de la caché compartida: no ha costado nada
+  cached    Boolean  @default(false)
   results   Int      @default(0)
   error     String?
   createdAt DateTime @default(now())
@@ -320,4 +324,19 @@ model AiSearch {
 
   @@index([orgId, createdAt])
   @@index([orgId, kind, targetId])
+}
+
+/// Caché compartida entre todos los negocios: la misma búsqueda se hace una vez
+/// y sirve para todos los clientes que venden o compran lo mismo.
+model PriceLookup {
+  id         String   @id @default(cuid())
+  /// market | supplier
+  kind       String
+  /// Clave normalizada (producto + detalles relevantes)
+  queryKey   String
+  query      String
+  results    Json
+  searchedAt DateTime @default(now())
+
+  @@unique([kind, queryKey])
 }

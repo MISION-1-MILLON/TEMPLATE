@@ -53,12 +53,14 @@ La app busca sola en internet, con Claude y su búsqueda web:
 - **Proveedores:** deduce lo que compras a partir de tu catálogo y busca proveedores con su precio, ordenados de más barato a más caro.
 
 Cuándo busca:
-- al crear un producto;
-- al pulsar "Buscar ahora";
-- cada día, mediante una tarea programada, revisa lo que lleve más de 7 días sin actualizarse.
+- **Revisión de la matriz (gratis para el cliente):** cada producto y cada cosa que compra el cliente se revisa una vez al mes. Lo hace la tarea programada diaria, que cada día revisa lo que lleve más de 30 días sin buscarse. También son de la matriz la búsqueda al crear un producto y la primera búsqueda de proveedores.
+- **"Buscar ahora" (a mano):** gasta el cupo diario del cliente (Gratis 5, Pro 40, Business 150; `DAILY_LIMIT` en `src/lib/research.ts`), salvo que haya un resultado de esa misma semana en la caché.
 
-Límite diario por negocio: Gratis 5, Pro 40 y Business 150 búsquedas (`DAILY_LIMIT` en `src/lib/research.ts`).
-Coste aproximado: 0,20–0,30 € por búsqueda (tokens del modelo y búsquedas web).
+**Caché compartida (`PriceLookup`):** la misma búsqueda (por ejemplo, "Nike Air Max 90" o "harina de trigo, kg") se hace una vez cada 30 días y sirve para todos los clientes. En restauración la clave incluye la ubicación, porque el precio de un plato depende de la zona. Así el coste depende de cuántos productos distintos hay en la plataforma, no del número de clientes.
+
+Coste aproximado: 0,20–0,30 € por búsqueda nueva (tokens del modelo y búsquedas web). Los resultados de la caché no cuestan nada.
+
+Capacidad: la tarea diaria trabaja unos 4 minutos con 3 búsquedas en paralelo, unas 15–25 búsquedas nuevas al día (450–750 al mes). Si se queda corto, hay dos opciones: programarla varias veces al día (requiere el plan Pro de Vercel) o pasarla a la Batch API de Anthropic, que tiene un 50 % de descuento.
 
 Variables en Vercel:
 

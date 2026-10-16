@@ -44,7 +44,7 @@ export default async function SuppliersPage() {
             {enabled
               ? items.length === 0
                 ? "Miramos tu catálogo, deducimos qué compras y buscamos quién te lo vende más barato."
-                : `Revisamos los precios solos cada semana. Te quedan ${left} de ${DAILY_LIMIT[org.plan] ?? DAILY_LIMIT.free} búsquedas hoy.`
+                : `Revisamos gratis tus proveedores una vez al mes, sin que hagas nada. Si quieres buscar antes, te quedan ${left} de ${DAILY_LIMIT[org.plan] ?? DAILY_LIMIT.free} búsquedas extra hoy.`
               : "Pendiente de activar: falta configurar la clave de búsqueda en el servidor."}
           </p>
         </div>

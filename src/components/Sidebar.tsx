@@ -28,16 +28,12 @@ export function Sidebar({
   sectorName,
   userName,
   level,
-  productsHref,
-  productsLabel,
 }: {
   groups: NavGroup[];
   orgName: string;
   sectorName: string;
   userName: string;
   level: LevelInfo;
-  productsHref: string;
-  productsLabel: string;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -129,12 +125,12 @@ export function Sidebar({
       <nav className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
         <div className="grid grid-cols-5 items-end text-[11px] font-medium text-slate-500">
           <BottomLink href="/panel" icon="🏠" label="Inicio" active={pathname === "/panel"} />
-          <BottomLink href={productsHref} icon="📦" label={productsLabel} active={pathname.startsWith(productsHref)} />
+          <BottomLink href="/panel/competencia" icon="📊" label="Competencia" active={pathname.startsWith("/panel/competencia")} />
           <Link href="/panel/ventas/nueva" className="-mt-6 flex flex-col items-center gap-1 pb-2">
             <span className="grid h-16 w-16 place-items-center rounded-full bg-brand-600 text-2xl text-white shadow-lg ring-4 ring-white">🛒</span>
             <span className="font-bold text-brand-700">VENDER</span>
           </Link>
-          <BottomLink href="/panel/ventas" icon="🧾" label="Ventas" active={pathname === "/panel/ventas" || /^\/panel\/ventas\/(?!nueva)/.test(pathname)} />
+          <BottomLink href="/panel/proveedores" icon="🚚" label="Proveedores" active={pathname.startsWith("/panel/proveedores")} />
           <button type="button" onClick={() => setOpen(true)} className="flex flex-col items-center gap-0.5 py-2">
             <span className="text-xl">☰</span>
             Más

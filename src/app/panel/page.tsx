@@ -6,6 +6,7 @@ import { getProgress } from "@/lib/game";
 import { centsToInput, formatMoney } from "@/lib/money";
 import { formatDate } from "@/lib/utils";
 import { setDailyGoal } from "./actions";
+import { latestCompetitorPrices, latestSupplierOffers, marketStats } from "@/lib/market";
 
 export const metadata = { title: "Inicio" };
 
@@ -13,7 +14,7 @@ export default async function Dashboard() {
   const { org, user, sector } = await requireSession();
   const t = sector.terms;
 
-  const [progress, pending, lowStock, recent] = await Promise.all([
+  const [progress, pending, lowStock, recent, market, offers, products, supplyItems] = await Promise.all([
     getProgress(org),
     db.sale.aggregate({ where: { orgId: org.id, status: "pending" }, _sum: { totalCents: true }, _count: true }),
     db.$queryRaw<Array<{ id: string; name: string; stock: number }>>`
@@ -26,7 +27,20 @@ export default async function Dashboard() {
       take: 5,
       include: { customer: { select: { name: true } }, items: { select: { name: true, quantity: true } } },
     }),
+    latestCompetitorPrices(org.id),
+    latestSupplierOffers(org.id),
+    db.product.findMany({ where: { orgId: org.id, active: true }, select: { id: true, priceCents: true } }),
+    db.supplyItem.findMany({ where: { orgId: org.id }, select: { id: true, currentSupplierId: true } }),
   ]);
+
+  const positions = products.map((p) => marketStats(p.priceCents, market.get(p.id) ?? []));
+  const pricier = positions.filter((s) => s.position === "above" || s.position === "most_expensive").length;
+  const compared = positions.filter((s) => s.count > 0).length;
+  const savings = supplyItems.filter((i) => {
+    const list = offers.get(i.id) ?? [];
+    const cur = list.find((o) => o.supplierId === i.currentSupplierId);
+    return cur && list[0] && list[0].priceCents < cur.priceCents;
+  }).length;
 
   const pendingMissions = progress.missions.filter((m) => !m.done);
   const doneCount = progress.missions.length - pendingMissions.length;
@@ -83,8 +97,18 @@ export default async function Dashboard() {
         {[
           { href: "/panel/ventas/nueva", icon: "🛒", label: "Vender", sub: "Cobrar algo ahora" },
           { href: "/panel/productos/nuevo", icon: "➕", label: `Añadir ${t.product.toLowerCase()}`, sub: "A tu catálogo" },
-          { href: "/panel/caja", icon: "💶", label: "Mi dinero", sub: "Lo que entra y sale" },
-          { href: "/panel/tienda", icon: "🏪", label: `Mi ${t.store.toLowerCase()}`, sub: "Tu web para clientes" },
+          {
+            href: "/panel/competencia",
+            icon: "📊",
+            label: "Competencia",
+            sub: compared === 0 ? "¿Estás caro o barato?" : pricier ? `⚠️ Caro en ${pricier} ${pricier === 1 ? "producto" : "productos"}` : "👍 Buen precio",
+          },
+          {
+            href: "/panel/proveedores",
+            icon: "🚚",
+            label: "Proveedores",
+            sub: supplyItems.length === 0 ? "Compra más barato" : savings ? `💸 Ahorro posible en ${savings}` : `${supplyItems.length} cosas vigiladas`,
+          },
         ].map((a) => (
           <Link key={a.href} href={a.href} className="card flex flex-col items-start p-4 transition hover:-translate-y-0.5 hover:border-brand-500 hover:shadow-md">
             <span className="text-3xl">{a.icon}</span>

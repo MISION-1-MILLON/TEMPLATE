@@ -2,6 +2,9 @@
 
 import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { aiEnabled } from "@/lib/ai-research";
+import { refreshProductMarket, searchesLeftToday } from "@/lib/research";
 import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth";
 import { readAttributes } from "@/lib/attributes";
@@ -63,12 +66,17 @@ export async function saveProduct(productId: string | null, _: ProductFormState,
     await db.product.update({ where: { id: productId }, data });
   } else {
     const initialStock = Math.max(0, Number(form.get("stock") ?? 0) || 0);
-    await db.$transaction(async (tx) => {
+    const created = await db.$transaction(async (tx) => {
       const p = await tx.product.create({ data: { ...data, orgId: org.id, stock: initialStock } });
       if (initialStock > 0) {
         await tx.stockMovement.create({ data: { orgId: org.id, productId: p.id, delta: initialStock, reason: "purchase" } });
       }
+      return p;
     });
+    // Nada más darlo de alta, buscamos en internet a cuánto lo vende la competencia
+    if (aiEnabled() && (await searchesLeftToday(org)) > 0) {
+      after(() => refreshProductMarket(org, created.id).then(() => undefined, () => undefined));
+    }
   }
 
   revalidatePath("/panel/productos");

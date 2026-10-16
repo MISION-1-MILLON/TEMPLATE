@@ -6,7 +6,9 @@ Software de gestión para pequeños negocios de **cualquier sector**: seis herra
 
 | Herramienta | Qué hace | Plan |
 |---|---|---|
-| **Gestión** | Productos y stock, clientes, ventas (TPV), caja y facturas | Gratis |
+| **Caja** | Vender (TPV), productos y stock, clientes, dinero del día y facturas | Gratis |
+| **Competencia** | Precios de la competencia buscados solos en internet | Gratis (límite diario) |
+| **Proveedores** | Ranking de proveedores del más barato al más caro | Gratis (límite diario) |
 | **Precio** | Calculadora de PVP por margen objetivo y semáforo de márgenes del catálogo | Gratis |
 | **Tienda** | Catálogo o carta pública (`/t/<negocio>`) con QR, alimentado por el stock real | Gratis |
 | **Publica** | Textos para Instagram, WhatsApp y Wallapop/Vinted a partir de la ficha del producto | Pro |
@@ -43,6 +45,30 @@ Cambiar de sector desde Ajustes no borra datos.
 Cada `git push` a `main` vuelve a publicar la app automáticamente. Para usar tu propio dominio: *Settings → Domains*.
 
 Opcional: `NEXT_PUBLIC_APP_TIMEZONE` (por defecto `Europe/Madrid`).
+
+## Búsqueda automática de precios (Competencia y Proveedores)
+
+La app busca sola en internet, con Claude y su búsqueda web:
+- **Competencia:** a cuánto venden tus productos otras tiendas (física, web, marketplaces). Te dice si estás caro o barato y te propone precios.
+- **Proveedores:** deduce lo que compras a partir de tu catálogo y busca proveedores con su precio, ordenados de más barato a más caro.
+
+Cuándo busca:
+- al crear un producto;
+- al pulsar "Buscar ahora";
+- cada día, mediante una tarea programada, revisa lo que lleve más de 7 días sin actualizarse.
+
+Límite diario por negocio: Gratis 5, Pro 40 y Business 150 búsquedas (`DAILY_LIMIT` en `src/lib/research.ts`).
+Coste aproximado: 0,20–0,30 € por búsqueda (tokens del modelo y búsquedas web).
+
+Variables en Vercel:
+
+| Variable | Para qué |
+|---|---|
+| `ANTHROPIC_API_KEY` | Clave de https://console.anthropic.com (Settings → API keys) |
+| `CRON_SECRET` | Cadena aleatoria. Vercel la usa para lanzar la tarea diaria (`vercel.json`) |
+
+Sin `ANTHROPIC_API_KEY`, las secciones funcionan, pero muestran "pendiente de activar".
+Para pruebas locales sin gastar: `NEXO_AI_MOCK=1` devuelve resultados simulados (marcados como "simulado").
 
 ## Cobro de suscripciones (Stripe)
 

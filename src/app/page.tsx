@@ -27,11 +27,11 @@ export default function Home() {
       <section className="mx-auto max-w-5xl px-4 pb-16 pt-20 text-center">
         <p className="text-sm font-bold uppercase tracking-[0.2em] text-brand-600">El software para tu negocio, sea cual sea</p>
         <h1 className="display mt-4 text-4xl leading-[1.05] sm:text-6xl">
-          Seis herramientas que trabajan sobre los mismos datos
+          Vende, vigila a tu competencia y compra más barato
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
-          El producto que das de alta es el que vendes, el que aparece en tu tienda online, el que publicas en
-          redes y el que acabas facturando: <strong>se escribe una vez y viaja por todo lo demás.</strong>
+          Tres herramientas en una, tan fáciles como un juego: <strong>una caja registradora</strong>, un vigilante de
+          <strong> precios de la competencia</strong> y un buscador de <strong>proveedores más baratos</strong>. Tú vendes; del resto nos encargamos nosotros.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link href="/registro" className="btn-primary display px-6 py-3 text-base uppercase">Empieza gratis</Link>
@@ -42,20 +42,30 @@ export default function Home() {
 
       {/* Herramientas */}
       <section id="herramientas" className="mx-auto max-w-6xl px-4 py-12">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {MODULES.map((m) => (
-            <div key={m.id} className="card p-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          {MODULES.slice(0, 3).map((m, i) => (
+            <div key={m.id} className="card p-7">
               <div className="flex items-center gap-4">
                 <ModuleIcon id={m.id} />
                 <div>
-                  <h3 className="display text-2xl uppercase">{m.name}</h3>
-                  <p className="text-sm text-slate-500">
-                    {m.status === "soon" ? "Próximamente" : `Incluido desde plan ${PLANS.find((p) => p.id === m.plan)?.name}`}
-                  </p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Sección {i + 1}</p>
+                  <h3 className="display text-3xl uppercase">{m.name}</h3>
                 </div>
               </div>
-              <p className="mt-4 font-medium">{m.summary}</p>
-              <p className="mt-2 text-sm text-slate-600">{m.description}</p>
+              <p className="mt-4 text-lg font-semibold">{m.summary}</p>
+              <p className="mt-2 text-slate-600">{m.description}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-10 text-center text-sm font-bold uppercase tracking-widest text-slate-400">Y además</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {MODULES.slice(3).map((m) => (
+            <div key={m.id} className="card flex items-start gap-3 p-4">
+              <ModuleIcon id={m.id} size="sm" />
+              <div>
+                <p className="font-bold">{m.name}{m.status === "soon" && <span className="badge ml-2 bg-slate-100 text-[10px] text-slate-500">Pronto</span>}</p>
+                <p className="text-xs text-slate-500">{m.summary}</p>
+              </div>
             </div>
           ))}
         </div>

@@ -2,6 +2,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { ProductForm } from "../ProductForm";
+
+export const maxDuration = 300;
 import { newProductLabel } from "@/sectors";
 
 export default async function NewProductPage() {

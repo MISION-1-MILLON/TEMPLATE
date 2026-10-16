@@ -14,17 +14,12 @@ export default async function PanelLayout({ children }: { children: React.ReactN
     return planIncludes(org.plan, m.plan) ? undefined : m.plan;
   };
 
-  // Nombres pensados para alguien sin experiencia contable
+  // Tres secciones principales y, aparte, el resto de herramientas
   const groups: NavGroup[] = [
     {
+      title: "Caja",
       items: [
         { href: "/panel", label: "Inicio", icon: "🏠" },
-        { href: "/panel/misiones", label: "Misiones", icon: "⭐" },
-      ],
-    },
-    {
-      title: "Mi negocio",
-      items: [
         { href: "/panel/ventas", label: "Mis ventas", icon: "🧾" },
         { href: "/panel/productos", label: t.products, icon: "📦" },
         { href: "/panel/clientes", label: t.customers, icon: "👥" },
@@ -32,16 +27,24 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       ],
     },
     {
-      title: "Herramientas",
+      title: "Mercado",
       items: [
+        { href: "/panel/competencia", label: "Competencia", icon: "📊" },
+        { href: "/panel/proveedores", label: "Proveedores", icon: "🚚" },
+      ],
+    },
+    {
+      title: "Más",
+      items: [
+        { href: "/panel/misiones", label: "Misiones", icon: "⭐" },
         { href: "/panel/precio", label: "Calcular precios", icon: "🧮", badge: toolBadge("precio") },
         { href: "/panel/tienda", label: `Mi ${t.store.toLowerCase()} online`, icon: "🏪", badge: toolBadge("tienda") },
         { href: "/panel/publica", label: "Redes sociales", icon: "📣", badge: toolBadge("publica") },
-        { href: "/panel/mercado", label: "Estadísticas", icon: "📊", badge: toolBadge("mercado") },
+        { href: "/panel/mercado", label: "Estadísticas", icon: "📈", badge: toolBadge("mercado") },
         { href: "/panel/fideliza", label: "Fidelizar clientes", icon: "💜", badge: toolBadge("fideliza") },
+        { href: "/panel/ajustes", label: "Ajustes", icon: "⚙️" },
       ],
     },
-    { items: [{ href: "/panel/ajustes", label: "Ajustes", icon: "⚙️" }] },
   ];
 
   const lvl = progress.level;
@@ -52,8 +55,6 @@ export default async function PanelLayout({ children }: { children: React.ReactN
         orgName={org.name}
         sectorName={sector.name}
         userName={user.name}
-        productsHref="/panel/productos"
-        productsLabel={t.products}
         level={{ level: lvl.level, name: lvl.name, pct: lvl.isMax ? 100 : Math.round((lvl.xpInLevel / lvl.xpForNext) * 100) }}
       />
       <main className="pb-28 lg:pb-0 lg:pl-64">

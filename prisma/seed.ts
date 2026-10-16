@@ -68,7 +68,64 @@ async function main() {
         // sin stock: se ignora
       }
     }
+    await seedMarket(org.id, sector.id);
     console.log(`✔ ${sector.name}: ${email} / demo1234`);
+  }
+}
+
+/** Datos de ejemplo de competencia y proveedores (en real los trae la búsqueda automática) */
+const COMPETITORS: Record<string, Array<[string, string]>> = {
+  general: [["Bazar Plaza", "fisica"], ["Amazon", "marketplace"], ["TodoCasa Online", "online"]],
+  zapatillas: [["Foot Locker", "fisica"], ["JD Sports", "online"], ["Zalando", "online"], ["StockX", "marketplace"]],
+  moda: [["Zara", "fisica"], ["Mango", "online"], ["El Corte Inglés", "online"], ["Vinted", "marketplace"]],
+  restauracion: [["Bar La Esquina", "fisica"], ["Taberna El Puerto", "fisica"], ["Casa Pepe", "fisica"]],
+  motor: [["Coches.net", "marketplace"], ["Flexicar", "online"], ["Autos Jiménez", "fisica"]],
+};
+const SUPPLIES: Record<string, Array<[string, string, number]>> = {
+  restauracion: [["Harina de trigo", "kg", 0.85], ["Aceite de oliva virgen extra", "litro", 7.4], ["Patatas", "kg", 0.9], ["Jamón serrano", "kg", 14.5], ["Queso crema", "kg", 6.2]],
+};
+const SUPPLIERS: Record<string, string[]> = {
+  general: ["Mayorista Central", "Distribuciones Levante", "Cash & Carry Norte"],
+  zapatillas: ["Sneaker Wholesale EU", "Distribuciones Deportivas", "Outlet Mayorista"],
+  moda: ["Textil Mayorista Madrid", "Moda B2B Europa", "Confecciones del Sur"],
+  restauracion: ["Makro", "Distribuciones Hostelería Sur", "Mercamadrid Frutas Paco", "Cash & Carry GM"],
+  motor: ["Subastas BCA", "Ganvam Profesional", "Autorola"],
+};
+
+async function seedMarket(orgId: string, sectorId: string) {
+  const products = await db.product.findMany({ where: { orgId } });
+  const comps = [];
+  for (const [name, kind] of COMPETITORS[sectorId] ?? COMPETITORS.general) {
+    comps.push(await db.competitor.create({ data: { orgId, name, kind } }));
+  }
+  for (const p of products) {
+    for (const c of comps) {
+      if (Math.random() < 0.2) continue;
+      const factor = 0.82 + Math.random() * 0.4;
+      await db.competitorPrice.create({
+        data: { orgId, competitorId: c.id, productId: p.id, priceCents: Math.round((p.priceCents * factor) / 5) * 5, note: p.name },
+      });
+    }
+  }
+  const sups = [];
+  for (const name of SUPPLIERS[sectorId] ?? SUPPLIERS.general) {
+    sups.push(await db.supplier.create({ data: { orgId, name, phone: `91${String(rand(1e7)).padStart(7, "0")}` } }));
+  }
+  const items = SUPPLIES[sectorId]
+    ? SUPPLIES[sectorId].map(([name, unit, base]) => ({ name, unit, base, productId: null as string | null }))
+    : products.map((p) => ({ name: p.name, unit: "unidad", base: (p.costCents || p.priceCents * 0.5) / 100, productId: p.id }));
+  for (const it of items) {
+    const item = await db.supplyItem.create({ data: { orgId, name: it.name, unit: it.unit, productId: it.productId } });
+    let first: string | null = null;
+    for (const s of sups) {
+      if (Math.random() < 0.15) continue;
+      await db.supplierPrice.create({
+        data: { orgId, supplierId: s.id, supplyItemId: item.id, priceCents: Math.round(it.base * (0.85 + Math.random() * 0.35) * 100), minOrder: Math.random() < 0.4 ? "50 €" : null },
+      });
+      first ??= s.id;
+    }
+    // El proveedor "actual" no siempre es el más barato: así se ve el aviso de ahorro
+    if (first) await db.supplyItem.update({ where: { id: item.id }, data: { currentSupplierId: first } });
   }
 }
 

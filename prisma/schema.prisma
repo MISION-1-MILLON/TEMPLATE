@@ -25,23 +25,23 @@ model User {
 
 /// Un negocio (tenant). Todos los datos cuelgan de aquí.
 model Organization {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
+  id             String  @id @default(cuid())
+  name           String
+  slug           String  @unique
   /// Clave del sector en src/sectors (general, zapatillas, moda, restauracion, motor…)
-  sector      String   @default("general")
-  plan        String   @default("free")
-  currency    String   @default("EUR")
+  sector         String  @default("general")
+  plan           String  @default("free")
+  currency       String  @default("EUR")
   /// IVA por defecto en puntos básicos de porcentaje (2100 = 21 %)
-  taxRateBp   Int      @default(2100)
-  taxId       String?
-  address     String?
-  phone       String?
-  email       String?
-  invoicePrefix String @default("F")
+  taxRateBp      Int     @default(2100)
+  taxId          String?
+  address        String?
+  phone          String?
+  email          String?
+  invoicePrefix  String  @default("F")
   /// Objetivo de ventas diario (céntimos, IVA incl.). null = se calcula solo
   dailyGoalCents Int?
-  storeEnabled Boolean @default(true)
+  storeEnabled   Boolean @default(true)
 
   // Suscripción (Stripe). `plan` es la fuente de verdad que usa la app;
   // el webhook de Stripe la mantiene sincronizada.
@@ -51,20 +51,26 @@ model Organization {
   subscriptionStatus   String?
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean   @default(false)
-  createdAt   DateTime @default(now())
+  createdAt            DateTime  @default(now())
 
-  memberships    Membership[]
-  categories     Category[]
-  products       Product[]
-  customers      Customer[]
-  sales          Sale[]
-  stockMovements StockMovement[]
-  cashMovements  CashMovement[]
+  memberships      Membership[]
+  categories       Category[]
+  products         Product[]
+  customers        Customer[]
+  sales            Sale[]
+  stockMovements   StockMovement[]
+  cashMovements    CashMovement[]
+  competitors      Competitor[]
+  competitorPrices CompetitorPrice[]
+  suppliers        Supplier[]
+  supplyItems      SupplyItem[]
+  supplierPrices   SupplierPrice[]
+  aiSearches       AiSearch[]
 }
 
 model Membership {
-  id     String @id @default(cuid())
-  role   String @default("owner") // owner | admin | staff
+  id     String       @id @default(cuid())
+  role   String       @default("owner") // owner | admin | staff
   userId String
   orgId  String
   user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -76,7 +82,7 @@ model Membership {
 // ─── Catálogo ──────────────────────────────────────────────────────────
 
 model Category {
-  id       String    @id @default(cuid())
+  id       String       @id @default(cuid())
   orgId    String
   name     String
   org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -107,10 +113,12 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  org            Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  category       Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  saleItems      SaleItem[]
-  stockMovements StockMovement[]
+  org              Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  category         Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  saleItems        SaleItem[]
+  stockMovements   StockMovement[]
+  competitorPrices CompetitorPrice[]
+  supplyItems      SupplyItem[]
 
   @@index([orgId, active])
 }
@@ -162,7 +170,7 @@ model Sale {
 }
 
 model SaleItem {
-  id             String  @id @default(cuid())
+  id             String   @id @default(cuid())
   saleId         String
   productId      String?
   /// Copia del nombre en el momento de la venta (la factura no cambia si se edita el producto)
@@ -170,34 +178,146 @@ model SaleItem {
   quantity       Int
   unitPriceCents Int
   taxRateBp      Int
-  sale    Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  sale           Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product        Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 }
 
 model StockMovement {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   orgId     String
   productId String
   delta     Int
-  reason    String   // sale | cancel | adjust | purchase
+  reason    String // sale | cancel | adjust | purchase
   saleId    String?
-  createdAt DateTime @default(now())
-  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  product   Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([orgId, productId])
 }
 
 model CashMovement {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   orgId       String
   /// Positivo = entrada, negativo = salida
   amountCents Int
-  method      String   @default("cash")
+  method      String       @default("cash")
   concept     String
   saleId      String?
+  createdAt   DateTime     @default(now())
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+}
+
+// ─── Competencia ───────────────────────────────────────────────────────
+
+model Competitor {
+  id        String   @id @default(cuid())
+  orgId     String
+  name      String
+  /// fisica | online | marketplace
+  kind      String   @default("fisica")
+  url       String?
+  location  String?
+  createdAt DateTime @default(now())
+
+  org    Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  prices CompetitorPrice[]
+
+  @@unique([orgId, name])
+}
+
+/// Precio visto en la competencia para uno de mis productos. Se guarda el histórico.
+model CompetitorPrice {
+  id           String   @id @default(cuid())
+  orgId        String
+  competitorId String
+  productId    String
+  priceCents   Int
+  url          String?
+  note         String?
+  observedAt   DateTime @default(now())
+
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  competitor Competitor   @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+  product    Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, productId])
+}
+
+// ─── Proveedores ───────────────────────────────────────────────────────
+
+model Supplier {
+  id          String   @id @default(cuid())
+  orgId       String
+  name        String
+  contactName String?
+  phone       String?
+  email       String?
+  website     String?
+  notes       String?
   createdAt   DateTime @default(now())
+
+  org        Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  prices     SupplierPrice[]
+  currentFor SupplyItem[]
+
+  @@unique([orgId, name])
+}
+
+/// Algo que el negocio compra para producir o revender (harina, tela, zapatillas…)
+model SupplyItem {
+  id                String   @id @default(cuid())
+  orgId             String
+  name              String
+  /// unidad | kg | litro | caja | metro | docena | par
+  unit              String   @default("unidad")
+  /// Si es un producto que se revende tal cual, su coste se actualiza con el proveedor elegido
+  productId         String?
+  currentSupplierId String?
+  createdAt         DateTime @default(now())
+
+  org             Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  product         Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  currentSupplier Supplier?       @relation(fields: [currentSupplierId], references: [id], onDelete: SetNull)
+  prices          SupplierPrice[]
+
+  @@unique([orgId, name])
+}
+
+/// Precio de un proveedor para una cosa que compro (sin IVA, por unidad). Se guarda el histórico.
+model SupplierPrice {
+  id           String   @id @default(cuid())
+  orgId        String
+  supplierId   String
+  supplyItemId String
+  priceCents   Int
+  minOrder     String?
+  deliveryDays Int?
+  observedAt   DateTime @default(now())
+
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  supplier   Supplier     @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplyItem SupplyItem   @relation(fields: [supplyItemId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, supplyItemId])
+}
+
+/// Registro de búsquedas automáticas en internet (control de coste y "última vez buscado")
+model AiSearch {
+  id        String   @id @default(cuid())
+  orgId     String
+  /// market | supplier | detect
+  kind      String
+  targetId  String?
+  ok        Boolean
+  results   Int      @default(0)
+  error     String?
+  createdAt DateTime @default(now())
+
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@index([orgId, createdAt])
+  @@index([orgId, kind, targetId])
 }

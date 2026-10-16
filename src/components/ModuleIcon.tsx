@@ -24,6 +24,16 @@ const STYLES: Record<string, { bg: string; fg: string; path: React.ReactNode }> 
     fg: "text-sky-600",
     path: <path d="M4 20h16M7 16v-5M11 16V7M15 16v-3M19 16V9" />,
   },
+  competencia: {
+    bg: "bg-sky-50",
+    fg: "text-sky-600",
+    path: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
+  },
+  proveedores: {
+    bg: "bg-emerald-50",
+    fg: "text-emerald-600",
+    path: <path d="M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />,
+  },
   fideliza: {
     bg: "bg-violet-50",
     fg: "text-violet-600",

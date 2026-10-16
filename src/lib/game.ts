@@ -74,7 +74,7 @@ export const getProgress = cache(async function getProgress(org: {
   const p = zonedParts(today);
   const since = zonedMidnight(p.year, p.month, p.day - 60);
 
-  const [salesCount, productCount, customerCount, withImage, expenses, recentSales] = await Promise.all([
+  const [salesCount, productCount, customerCount, withImage, expenses, recentSales, compared, supplierPrices] = await Promise.all([
     db.sale.count({ where: { orgId: org.id, status: { not: "cancelled" } } }),
     db.product.count({ where: { orgId: org.id, active: true } }),
     db.customer.count({ where: { orgId: org.id } }),
@@ -84,6 +84,8 @@ export const getProgress = cache(async function getProgress(org: {
       where: { orgId: org.id, status: { not: "cancelled" }, createdAt: { gte: since } },
       select: { createdAt: true, totalCents: true },
     }),
+    db.competitorPrice.count({ where: { orgId: org.id } }),
+    db.supplierPrice.count({ where: { orgId: org.id } }),
   ]);
 
   // Ventas por día (zona horaria del negocio)
@@ -114,6 +116,8 @@ export const getProgress = cache(async function getProgress(org: {
     { id: "venta", title: "Haz tu primera venta", hint: "Pulsa VENDER, elige y cobra.", href: "/panel/ventas/nueva", xp: 30, done: salesCount >= 1 },
     { id: "perfil", title: "Completa los datos de tu negocio", hint: "Salen en tus facturas y en tu tienda.", href: "/panel/ajustes", xp: 20, done: Boolean(org.taxId && (org.address || org.phone)) },
     { id: "cliente", title: "Guarda tu primer cliente", hint: "Así sabrás quién vuelve a comprarte.", href: "/panel/clientes/nuevo", xp: 20, done: customerCount >= 1 },
+    { id: "competencia", title: "Compara tus precios con la competencia", hint: "Buscamos en internet a cuánto lo venden otros.", href: "/panel/competencia", xp: 30, done: compared >= 1 },
+    { id: "proveedores", title: "Encuentra tus proveedores más baratos", hint: "Detectamos lo que compras y buscamos quién te lo vende mejor.", href: "/panel/proveedores", xp: 30, done: supplierPrices >= 1 },
     { id: "cinco", title: "Ten 5 productos en tu catálogo", hint: "Cuantos más, más fácil vender.", href: "/panel/productos/nuevo", xp: 30, done: productCount >= 5 },
     { id: "foto", title: "Ponle foto a un producto", hint: "Con foto se vende más en tu tienda online.", href: "/panel/productos", xp: 20, done: withImage >= 1 },
     { id: "gasto", title: "Apunta un gasto en la caja", hint: "Para saber cuánto dinero tienes de verdad.", href: "/panel/caja", xp: 20, done: expenses >= 1 },

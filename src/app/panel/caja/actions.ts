@@ -19,4 +19,5 @@ export async function addCashMovement(form: FormData) {
     data: { orgId: org.id, locationId: location.id, amountCents: sign * Math.abs(amount), concept, method: method in PAYMENT_METHODS ? method : "cash" },
   });
   revalidatePath("/panel/caja");
+  revalidatePath("/panel");
 }

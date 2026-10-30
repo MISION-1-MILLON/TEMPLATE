@@ -49,7 +49,7 @@ export function Figures({ items }: { items: { label: string; value: string; hint
 /** Filtros rápidos como enlaces (funcionan sin JavaScript y se pueden compartir) */
 export function FilterChips({ items }: { items: { label: string; href: string; active: boolean }[] }) {
   return (
-    <nav className="flex gap-1 overflow-x-auto rounded-lg bg-slate-100 p-0.5" aria-label="Filtro">
+    <nav className="inline-flex max-w-full gap-1 overflow-x-auto rounded-lg bg-slate-100 p-0.5" aria-label="Filtro">
       {items.map((c) => (
         <a key={c.href} href={c.href} aria-current={c.active ? "page" : undefined}
           className={`whitespace-nowrap rounded-md px-2.5 py-1 text-sm font-medium transition-colors duration-150 ${c.active ? "bg-white text-ink shadow-[0_1px_2px_rgb(0_0_0/0.08)]" : "text-slate-600 hover:text-ink"}`}>

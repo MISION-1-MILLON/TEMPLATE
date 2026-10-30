@@ -91,6 +91,10 @@ async function main() {
         console.log(`  · ${name}: ${roleEmail} / demo1234`);
       }
     }
+    // En hostelería se controla el stock de lo que se compra hecho (bebidas y postres)
+    if (sector.id === "restauracion") {
+      await db.product.updateMany({ where: { orgId: org.id, category: { name: { in: ["Bebidas", "Postres"] } } }, data: { trackStock: true, lowStockAt: 6 } });
+    }
     // Stock de sobra en cada local para poder simular ventas
     if (sector.id !== "motor") {
       const tracked = await db.product.findMany({ where: { orgId: org.id, trackStock: true } });
@@ -129,6 +133,16 @@ async function main() {
         // sin stock: se ignora
       }
     }
+    // Algunos gastos y el cambio de la mañana, para que la caja no sean solo ventas
+    for (let i = 0; i < 12; i++) {
+      const [concept, cents] = ([["Cambio de la mañana", 10000], ["Compra de hielo", -1250], ["Mensajería", -890], ["Productos de limpieza", -2340]] as const)[i % 4];
+      const d = new Date(Date.now() - (i < 2 ? 0 : 1 + rand(40)) * 86_400_000);
+      d.setHours(i < 2 ? 9 : 9 + rand(10), rand(60));
+      if (d > new Date()) d.setTime(Date.now() - 3_600_000);
+      await db.cashMovement.create({ data: { orgId: org.id, locationId: locations[i % locations.length], concept, amountCents: cents, method: "cash", createdAt: d } });
+    }
+    // Las entradas de stock, antes que cualquier venta
+    await db.stockMovement.updateMany({ where: { orgId: org.id, reason: "purchase" }, data: { createdAt: new Date(Date.now() - 61 * 86_400_000) } });
     await seedMarket(org.id, sector.id);
     console.log(`✔ ${sector.name}: ${email} / demo1234`);
   }

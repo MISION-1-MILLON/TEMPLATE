@@ -41,7 +41,8 @@ export function buildNav(s: PanelSession): { groups: NavGroup[]; tabs: NavItem[]
       { href: "/panel/caja", label: "Caja y gastos", icon: "wallet" },
       { href: "/panel/impuestos", label: "IVA por trimestre", icon: "landmark" },
     ];
-    return { groups: [{ items }], tabs: items };
+    const short = ["Resumen", "Ventas", "Caja", "IVA"];
+    return { groups: [{ items }], tabs: items.map((i, n) => ({ ...i, label: short[n] })) };
   }
 
   const sections: NavGroup[] = [

@@ -54,7 +54,8 @@ export async function saveProduct(productId: string | null, _: ProductFormState,
     description: String(form.get("description") ?? "").trim() || null,
     imageUrl: String(form.get("imageUrl") ?? "").trim() || null,
     priceCents: parseMoney(form.get("price")),
-    costCents: parseMoney(form.get("cost")),
+    // Quien no ve el beneficio no ve el coste: no se le pisa
+    ...(can("finance.profit") ? { costCents: parseMoney(form.get("cost")) } : {}),
     taxRateBp: taxRaw === "" ? null : Math.round(Number(taxRaw.replace(",", ".")) * 100),
     trackStock: form.get("trackStock") === "on",
     lowStockAt: Number(form.get("lowStockAt") ?? 0) || 0,
@@ -85,31 +86,34 @@ export async function saveProduct(productId: string | null, _: ProductFormState,
   redirect("/panel/productos");
 }
 
-const STOCK_REASONS: StockReason[] = ["purchase", "adjust", "count", "waste"];
+const STOCK_REASONS: StockReason[] = ["purchase", "count", "waste", "adjust"];
 
 /**
- * Ajusta el stock en el local activo. Con `counted` (recuento físico) se apunta
- * la diferencia hasta la cantidad contada; si no, `delta` (entrada o merma).
+ * Apunta un movimiento de stock en el local activo: una entrada (suma), una
+ * merma (resta) o un recuento (`amount` es lo contado y se apunta la diferencia).
  */
 export async function adjustStock(productId: string, form: FormData) {
   const { org, user, location, can } = await requireLocation();
   if (!can("stock.adjust")) throw new PermissionError();
-  const raw = String(form.get("reason") ?? "adjust");
+  const raw = String(form.get("reason") ?? "purchase");
   const reason = (STOCK_REASONS as string[]).includes(raw) ? (raw as StockReason) : "adjust";
-  const countedRaw = String(form.get("counted") ?? "").trim();
+  const amount = Math.trunc(Number(String(form.get("amount") ?? "").replace(",", ".")));
+  if (!Number.isFinite(amount)) return;
   await db.$transaction(async (tx) => {
     const p = await tx.product.findFirst({ where: { id: productId, orgId: org.id } });
     if (!p) return;
-    let delta = Math.trunc(Number(form.get("delta") ?? 0));
-    if (countedRaw !== "") {
+    let delta = amount;
+    if (reason === "count") {
       const here = await tx.productStock.findUnique({ where: { productId_locationId: { productId: p.id, locationId: location.id } } });
-      delta = Math.max(0, Math.trunc(Number(countedRaw))) - (here?.quantity ?? 0);
+      delta = Math.max(0, amount) - (here?.quantity ?? 0);
     }
-    if (reason === "waste") delta = -Math.abs(delta);
+    if (reason === "waste") delta = -Math.abs(amount);
+    if (reason === "purchase") delta = Math.abs(amount);
     if (!delta) return;
     await moveStock(tx, { orgId: org.id, productId: p.id, locationId: location.id, delta, reason, userId: user.id });
   });
   revalidatePath(`/panel/productos/${productId}`);
+  revalidatePath("/panel/productos");
 }
 
 /** Baja lógica: se conserva para el histórico de ventas y facturas */

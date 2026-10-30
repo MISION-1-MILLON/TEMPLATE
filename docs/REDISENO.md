@@ -64,3 +64,23 @@ La fuente de verdad es `src/lib/permissions.ts`; el servidor lo comprueba en cad
 5. Pantallas del panel.
 6. Landing, acceso y tienda pública.
 7. Verificación (impeccable, taste-skill, typecheck, build, recorridos por rol) y PR.
+
+## Comprobación
+
+Recorrido con un navegador sobre la versión de producción, entrando con cada perfil del restaurante de ejemplo
+(✓ se abre; · no disponible para ese perfil):
+
+| Pantalla | Dueño | Gerente | Empleado | Gestoría |
+|---|:-:|:-:|:-:|:-:|
+| Inicio | ✓ | ✓ | ✓ (su turno) | ✓ (resumen del trimestre) |
+| Vender | ✓ | ✓ | ✓ | · |
+| Ventas | ✓ | ✓ | ✓ (las suyas de hoy) | ✓ |
+| Caja | ✓ | ✓ | · | ✓ (consulta) |
+| Catálogo / Stock | ✓ | ✓ | ✓ (ver y ajustar stock) | · |
+| Nuevo producto, clientes, competencia, proveedores, tienda, publicar, estadísticas, progreso, equipo | ✓ | ✓ | · | · |
+| Precios y márgenes, locales, ajustes | ✓ | · | · | · |
+| IVA por trimestre | ✓ | · | · | ✓ |
+| Exportar ventas (CSV) | ✓ | ✓ | · | ✓ |
+
+taste-skill `lint.mjs --app`: 0 FAIL. `inspect.mjs --app` en portada, registro, acceso y tienda pública: 0 FAIL
+(las páginas del panel necesitan sesión y se revisaron con capturas por perfil, en claro, oscuro y móvil).

@@ -230,7 +230,7 @@ export function PointOfSale({
             const n = inTicket(p.id);
             return (
               <button key={p.id} type="button" disabled={out} onClick={() => add(p)}
-                className={cn("card group relative flex flex-col overflow-hidden text-left transition-[transform,border-color] duration-150 ease-out hover:border-slate-300 active:scale-[0.97] disabled:opacity-40", n > 0 && "border-ink ring-1 ring-ink")}>
+                className={cn("card group relative flex flex-col overflow-hidden text-left transition-[transform,border-color] duration-150 ease-out hover:border-slate-300 active:scale-[0.97] disabled:opacity-40", n > 0 && "border-ink")}>
                 <span className={cn("relative block w-full bg-slate-100", p.imageUrl ? "aspect-[4/3]" : "h-14")}>
                   {p.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element

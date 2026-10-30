@@ -109,13 +109,19 @@ npm run dev                   # http://localhost:3000
 
 Si cambias `prisma/schema.prisma`, genera la migración con `npm run db:migrate:new`.
 
-Cuentas demo (plan Pro), todas con la contraseña `demo1234`:
+Cuentas demo, todas con la contraseña `demo1234` (dueño de cada negocio; plan Pro):
 
 - `demo+general@nexo.app`
 - `demo+zapatillas@nexo.app`
 - `demo+moda@nexo.app`
-- `demo+restauracion@nexo.app`
+- `demo+restauracion@nexo.app` (plan Business, con dos locales: Centro y Malasaña)
 - `demo+motor@nexo.app`
+
+En el restaurante hay además un usuario de cada perfil, para ver cómo cambia el panel:
+
+- `demo+manager@nexo.app`: Marta, gerente del local Centro
+- `demo+staff@nexo.app`: Leo, empleado del local Centro
+- `demo+accountant@nexo.app`: la gestoría (solo consulta y exporta)
 
 ## Arquitectura
 

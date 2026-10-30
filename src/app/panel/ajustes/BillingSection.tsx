@@ -74,7 +74,7 @@ export function BillingSection({ org, status, detail }: { org: Organization; sta
           else label = `Cambiar a ${p.name}`;
           const confirmFree = p.id === "free" && subscribed;
           return (
-            <form key={p.id} action={changePlan} className={cn("flex flex-col rounded-xl border p-4", isCurrent ? "border-ink ring-1 ring-ink" : "border-slate-200")}>
+            <form key={p.id} action={changePlan} className={cn("flex flex-col rounded-xl border p-4", isCurrent ? "border-ink" : "border-slate-200")}>
               <input type="hidden" name="plan" value={p.id} />
               <p className="font-semibold">{p.name}</p>
               <p className="mt-0.5 text-sm text-slate-500"><span className="num text-2xl font-semibold tracking-tight text-ink">{p.priceMonthly} €</span> /mes{p.priceMonthly ? " + IVA" : ""}</p>

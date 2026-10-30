@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { logoutAction } from "@/app/(auth)/actions";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Check, ChevronsUpDown, LogOut, Menu, Moon, Search, Sun, X } from "lucide-react";
 import type { NavGroup, NavItem } from "@/lib/nav";
@@ -223,7 +224,10 @@ function Footer(p: Pick<ShellProps, "level" | "userName" | "roleName"> & { compa
       <div className="flex items-center gap-1 px-1">
         <p className="min-w-0 flex-1 truncate text-sm text-slate-700">{p.userName}</p>
         <ThemeToggle />
-        <Link href="/salir" className="btn-icon h-8 w-8" aria-label="Salir" title="Salir"><LogOut className="h-4 w-4" strokeWidth={1.75} /></Link>
+        {/* Salir es un POST: un enlace se precargaría y cerraría la sesión solo */}
+        <form action={logoutAction}>
+          <button className="btn-icon h-8 w-8" aria-label="Salir" title="Salir"><LogOut className="h-4 w-4" strokeWidth={1.75} /></button>
+        </form>
       </div>
     </div>
   );

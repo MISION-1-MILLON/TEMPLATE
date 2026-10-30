@@ -70,11 +70,11 @@ export default function Home() {
         <div className="max-w-3xl">
           <p className="text-sm font-medium text-brand-700">Centro de mando para negocios con mostrador</p>
           <h1 className="mt-3 text-4xl font-semibold leading-[1.05] tracking-tight text-balance sm:text-6xl">
-            Todo tu negocio, en una pantalla. Y cada persona, en la suya.
+            Todo tu negocio, en una pantalla
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-slate-600 text-pretty">
-            Ventas, caja, stock, clientes y facturas sobre los mismos datos. El dueño ve el beneficio, el gerente lleva su local,
-            el empleado vende y la gestoría descarga el IVA, cada uno con su perfil.
+            Y cada persona, en la suya. Ventas, caja, stock, clientes y facturas sobre los mismos datos: el dueño ve el beneficio,
+            el gerente lleva su local, el empleado vende y la gestoría descarga el IVA.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/registro" className="btn-primary btn-lg">Empieza gratis <ArrowRight className="h-4 w-4" strokeWidth={2} /></Link>
@@ -83,7 +83,7 @@ export default function Home() {
           <p className="mt-4 text-sm text-slate-500">Sin tarjeta. Preparado para tu sector en dos minutos.</p>
         </div>
 
-        <figure className="card mt-14 overflow-hidden shadow-[0_24px_64px_-32px_rgb(0_0_0/0.35)]">
+        <figure className="card mt-14 overflow-hidden">
           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3 text-sm">
             <span className="font-medium">El pulso del día <span className="font-normal text-slate-500">· Centro</span></span>
             <span className="num text-slate-500">21:00</span>
@@ -107,7 +107,7 @@ export default function Home() {
       {/* Perfiles */}
       <section id="perfiles" className="border-t border-slate-200 bg-surface py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Cuatro perfiles. Cada uno ve lo que necesita, y nada más.</h2>
+          <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Cada perfil ve lo suyo, y nada más</h2>
           <p className="mt-3 max-w-2xl text-slate-600">Los permisos se comprueban en el servidor, no solo en la pantalla: un empleado no puede ver tus márgenes aunque lo intente.</p>
           <div className="mt-12 grid gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 sm:grid-cols-2 lg:grid-cols-4">
             {PROFILES.map((p) => (
@@ -138,7 +138,7 @@ export default function Home() {
             ["Caja", "Entra en la caja de ese local, por forma de pago."],
             ["Factura", "Queda numerada, con su base y su IVA."],
           ].map(([t, d], i) => (
-            <li key={t} className="border-t border-slate-300 pt-4">
+            <li key={t} className="border-t border-slate-200 pt-4">
               <span className="num text-sm text-slate-400">0{i + 1}</span>
               <h3 className="mt-1 font-semibold">{t}</h3>
               <p className="mt-1 text-sm text-slate-600">{d}</p>
@@ -155,7 +155,7 @@ export default function Home() {
           <div className="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
             {MODULES.map((m) => (
               <div key={m.id}>
-                <ModuleIcon id={m.id} />
+                <ModuleIcon id={m.id} className="h-5 w-5 text-slate-500" />
                 <h3 className="mt-3 flex items-center gap-2 font-semibold">{m.name}{m.status === "soon" && <span className="badge-neutral">Pronto</span>}</h3>
                 <p className="mt-1 text-sm text-slate-600">{m.summary}</p>
               </div>
@@ -191,7 +191,7 @@ export default function Home() {
           <p className="mt-3 text-slate-600">Empieza gratis. Los planes de pago incluyen 14 días de prueba. IVA no incluido.</p>
           <div className="mt-10 grid gap-4 md:grid-cols-3">
             {PLANS.map((p) => (
-              <div key={p.id} className={`card flex flex-col p-6 ${p.highlighted ? "border-ink ring-1 ring-ink" : ""}`}>
+              <div key={p.id} className={`card flex flex-col p-6 ${p.highlighted ? "border-ink" : ""}`}>
                 <h3 className="font-semibold">{p.name}</h3>
                 <p className="mt-1 text-sm text-slate-500">{p.blurb}</p>
                 <p className="mt-5"><span className="num text-4xl font-semibold tracking-tight">{p.priceMonthly} €</span><span className="text-slate-500"> /mes</span></p>

@@ -5,7 +5,7 @@ import { registerAction } from "../actions";
 import { FormError, SubmitButton } from "@/components/forms";
 import { cn } from "@/lib/utils";
 
-interface SectorOption { id: string; name: string; tagline: string; accent: string }
+interface SectorOption { id: string; name: string; tagline: string }
 
 export function RegisterForm({ sectors, defaultSector }: { sectors: SectorOption[]; defaultSector?: string }) {
   const [state, action] = useActionState(registerAction, undefined);
@@ -21,12 +21,12 @@ export function RegisterForm({ sectors, defaultSector }: { sectors: SectorOption
               key={s.id}
               className={cn(
                 "cursor-pointer rounded-lg border p-3 transition-[border-color,background-color] duration-150 ease-out",
-                sector === s.id ? "border-ink bg-slate-50 ring-1 ring-ink" : "border-slate-200 hover:border-slate-300",
+                sector === s.id ? "border-ink bg-slate-50" : "border-slate-200 hover:border-slate-300",
               )}
             >
               <input type="radio" name="sector" value={s.id} checked={sector === s.id} onChange={() => setSector(s.id)} className="sr-only" />
               <span className="block text-sm font-medium">{s.name}</span>
-              <span className="mt-0.5 block text-xs text-slate-500">{s.tagline}</span>
+              <span className="mt-0.5 block text-[0.8125rem] text-slate-500">{s.tagline}</span>
             </label>
           ))}
         </div>

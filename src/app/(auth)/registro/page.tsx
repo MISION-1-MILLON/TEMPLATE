@@ -6,7 +6,7 @@ export const metadata = { title: "Crear cuenta" };
 
 export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ sector?: string }> }) {
   const { sector } = await searchParams;
-  const sectors = SECTOR_LIST.map((s) => ({ id: s.id, name: s.name, tagline: s.tagline, accent: s.accent }));
+  const sectors = SECTOR_LIST.map((s) => ({ id: s.id, name: s.name, tagline: s.tagline }));
   return (
     <div className="card w-full max-w-2xl p-6 sm:p-8">
       <h1 className="text-2xl font-semibold tracking-tight">Crea tu centro de mando</h1>

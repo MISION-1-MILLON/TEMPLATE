@@ -115,7 +115,7 @@ export default async function PublicStore({ params }: { params: Promise<{ slug: 
           </section>
         ))}
       </main>
-      <footer className="py-10 text-center text-xs text-slate-400">Hecho con {BRAND.name}</footer>
+      <footer className="py-10 text-center text-xs text-slate-500">Hecho con {BRAND.name}</footer>
     </div>
   );
 }

@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
-import { requireSession } from "@/lib/auth";
+import { requireModule } from "@/lib/auth";
 import { asAttributes } from "@/lib/attributes";
 import { db } from "@/lib/db";
 import { formatMoney, splitTax } from "@/lib/money";
 import { PriceCalculator } from "./PriceCalculator";
 
-export const metadata = { title: "Precio" };
+export const metadata = { title: "Precios y márgenes" };
 
 export default async function PricingPage() {
-  const { org, sector } = await requireSession();
+  const { org, sector } = await requireModule("precio");
   const products = await db.product.findMany({ where: { orgId: org.id, active: true }, orderBy: { name: "asc" } });
   const hasReference = sector.productFields.some((f) => f.key === "precio_reventa");
 
@@ -29,13 +29,13 @@ export default async function PricingPage() {
 
   return (
     <>
-      <PageHeader title="Calcular precios" subtitle="Descubre a cuánto vender y cuánto ganas de verdad con cada cosa." />
-      <div className="grid gap-6 lg:grid-cols-3">
-        <PriceCalculator defaultTax={org.taxRateBp / 100} />
-        <section className="card lg:col-span-2">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-            <h2 className="font-bold">¿Cuánto ganas con cada {sector.terms.product.toLowerCase()}?</h2>
-            <span className="text-sm text-slate-500">De media te quedas el <strong>{avg.toFixed(0)} %</strong></span>
+      <PageHeader title="Precios y márgenes" subtitle="A cuánto vender y cuánto te queda de verdad con cada cosa." />
+      <div className="grid items-start gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
+        <div className="lg:sticky lg:top-8"><PriceCalculator defaultTax={org.taxRateBp / 100} /></div>
+        <section className="card">
+          <div className="card-header">
+            <h2 className="card-title">Lo que te queda con cada {sector.terms.product.toLowerCase()}</h2>
+            <span className="text-sm text-slate-500">Media <span className="num font-medium text-ink">{avg.toFixed(0)} %</span></span>
           </div>
           <div className="overflow-x-auto">
             <table className="table">
@@ -51,20 +51,20 @@ export default async function PricingPage() {
               <tbody>
                 {rows.map(({ p, margin, pct, ref }) => (
                   <tr key={p.id}>
-                    <td><Link href={`/panel/productos/${p.id}`} className="hover:text-brand-600">{p.name}</Link></td>
-                    <td className="text-right tabular-nums">{p.costCents ? formatMoney(p.costCents) : <span className="text-slate-400">¿?</span>}</td>
-                    <td className="text-right tabular-nums">{formatMoney(p.priceCents)}</td>
-                    <td className="text-right tabular-nums">
+                    <td><Link href={`/panel/productos/${p.id}`} className="hover:underline">{p.name}</Link></td>
+                    <td className="num text-right">{p.costCents ? formatMoney(p.costCents) : <Link href={`/panel/productos/${p.id}`} className="badge-neutral">Añadir coste</Link>}</td>
+                    <td className="num text-right">{formatMoney(p.priceCents)}</td>
+                    <td className="num text-right">
                       {p.costCents ? (
-                        <span className={pct < 20 ? "font-semibold text-red-600" : pct < 35 ? "text-amber-600" : "text-emerald-700"}>
+                        <span className={pct < 20 ? "font-medium text-negative" : pct < 35 ? "text-warning" : "text-ink"}>
                           {formatMoney(margin)} · {pct.toFixed(0)} %
                         </span>
                       ) : "—"}
                     </td>
                     {hasReference && (
-                      <td className="text-right tabular-nums">
+                      <td className="num text-right">
                         {ref ? (
-                          <span className={ref > p.priceCents ? "text-emerald-700" : "text-slate-600"} title={ref > p.priceCents ? "Estás por debajo del mercado" : ""}>
+                          <span className={ref > p.priceCents ? "text-positive" : "text-slate-600"} title={ref > p.priceCents ? "Estás por debajo del mercado" : ""}>
                             {formatMoney(ref)}
                           </span>
                         ) : "—"}
@@ -75,7 +75,7 @@ export default async function PricingPage() {
               </tbody>
             </table>
           </div>
-          <p className="px-5 py-3 text-xs text-slate-500">«Ganas» es lo que te queda después de pagar lo que te costó y el IVA. En rojo, los que te dejan menos del 20 %: plantéate subirles el precio. Si ves «¿?», añade cuánto te costó en la ficha del producto.</p>
+          <p className="px-5 py-3 text-xs text-slate-500">«Ganas» es lo que te queda después de pagar lo que te costó y el IVA. En rojo, los que te dejan menos del 20 %: plantéate subirles el precio.</p>
         </section>
       </div>
     </>

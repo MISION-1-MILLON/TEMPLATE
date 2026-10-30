@@ -55,8 +55,8 @@ export function SearchButton({
         )}
       </button>
       {pending && !compact && <p className="mt-2 text-xs text-slate-500">Suele tardar entre 20 y 60 segundos. Puedes esperar aquí.</p>}
-      {msg?.ok && <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{msg.ok}</p>}
-      {msg?.error && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{msg.error}</p>}
+      {msg?.ok && <p className="mt-2 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800" role="status">{msg.ok}</p>}
+      {msg?.error && <p className="mt-2 rounded-lg bg-negative/10 px-3 py-2 text-sm text-negative" role="alert">{msg.error}</p>}
     </div>
   );
 }

@@ -6,7 +6,9 @@ import { after } from "next/server";
 import { aiEnabled } from "@/lib/ai-research";
 import { refreshProductMarket } from "@/lib/research";
 import { redirect } from "next/navigation";
-import { requireSession } from "@/lib/auth";
+import { requireLocation, requirePermission } from "@/lib/auth";
+import { PermissionError } from "@/lib/permissions";
+import { moveStock, type StockReason } from "@/lib/stock";
 import { readAttributes } from "@/lib/attributes";
 import { db } from "@/lib/db";
 import { parseMoney } from "@/lib/money";
@@ -17,7 +19,8 @@ export type ProductFormState = { error?: string } | undefined;
 const FREE_PRODUCT_LIMIT = 50;
 
 export async function saveProduct(productId: string | null, _: ProductFormState, form: FormData): Promise<ProductFormState> {
-  const { org, sector } = await requireSession();
+  const { org, sector, location, can } = await requireLocation();
+  if (!can("products.manage")) throw new PermissionError();
 
   const name = String(form.get("name") ?? "").trim();
   if (!name) return { error: "El nombre es obligatorio" };
@@ -51,7 +54,8 @@ export async function saveProduct(productId: string | null, _: ProductFormState,
     description: String(form.get("description") ?? "").trim() || null,
     imageUrl: String(form.get("imageUrl") ?? "").trim() || null,
     priceCents: parseMoney(form.get("price")),
-    costCents: parseMoney(form.get("cost")),
+    // Quien no ve el beneficio no ve el coste: no se le pisa
+    ...(can("finance.profit") ? { costCents: parseMoney(form.get("cost")) } : {}),
     taxRateBp: taxRaw === "" ? null : Math.round(Number(taxRaw.replace(",", ".")) * 100),
     trackStock: form.get("trackStock") === "on",
     lowStockAt: Number(form.get("lowStockAt") ?? 0) || 0,
@@ -67,10 +71,9 @@ export async function saveProduct(productId: string | null, _: ProductFormState,
   } else {
     const initialStock = Math.max(0, Number(form.get("stock") ?? 0) || 0);
     const created = await db.$transaction(async (tx) => {
-      const p = await tx.product.create({ data: { ...data, orgId: org.id, stock: initialStock } });
-      if (initialStock > 0) {
-        await tx.stockMovement.create({ data: { orgId: org.id, productId: p.id, delta: initialStock, reason: "purchase" } });
-      }
+      const p = await tx.product.create({ data: { ...data, orgId: org.id } });
+      // Las existencias iniciales entran en el local activo
+      if (initialStock > 0) await moveStock(tx, { orgId: org.id, productId: p.id, locationId: location.id, delta: initialStock, reason: "purchase" });
       return p;
     });
     // Nada más darlo de alta, buscamos en internet a cuánto lo vende la competencia
@@ -83,23 +86,39 @@ export async function saveProduct(productId: string | null, _: ProductFormState,
   redirect("/panel/productos");
 }
 
+const STOCK_REASONS: StockReason[] = ["purchase", "count", "waste", "adjust"];
+
+/**
+ * Apunta un movimiento de stock en el local activo: una entrada (suma), una
+ * merma (resta) o un recuento (`amount` es lo contado y se apunta la diferencia).
+ */
 export async function adjustStock(productId: string, form: FormData) {
-  const { org } = await requireSession();
-  const delta = Math.trunc(Number(form.get("delta") ?? 0));
-  const reason = form.get("reason") === "purchase" ? "purchase" : "adjust";
-  if (!delta) return;
+  const { org, user, location, can } = await requireLocation();
+  if (!can("stock.adjust")) throw new PermissionError();
+  const raw = String(form.get("reason") ?? "purchase");
+  const reason = (STOCK_REASONS as string[]).includes(raw) ? (raw as StockReason) : "adjust";
+  const amount = Math.trunc(Number(String(form.get("amount") ?? "").replace(",", ".")));
+  if (!Number.isFinite(amount)) return;
   await db.$transaction(async (tx) => {
     const p = await tx.product.findFirst({ where: { id: productId, orgId: org.id } });
     if (!p) return;
-    await tx.product.update({ where: { id: p.id }, data: { stock: { increment: delta } } });
-    await tx.stockMovement.create({ data: { orgId: org.id, productId: p.id, delta, reason } });
+    let delta = amount;
+    if (reason === "count") {
+      const here = await tx.productStock.findUnique({ where: { productId_locationId: { productId: p.id, locationId: location.id } } });
+      delta = Math.max(0, amount) - (here?.quantity ?? 0);
+    }
+    if (reason === "waste") delta = -Math.abs(amount);
+    if (reason === "purchase") delta = Math.abs(amount);
+    if (!delta) return;
+    await moveStock(tx, { orgId: org.id, productId: p.id, locationId: location.id, delta, reason, userId: user.id });
   });
   revalidatePath(`/panel/productos/${productId}`);
+  revalidatePath("/panel/productos");
 }
 
 /** Baja lógica: se conserva para el histórico de ventas y facturas */
 export async function archiveProduct(productId: string) {
-  const { org } = await requireSession();
+  const { org } = await requirePermission("products.manage");
   await db.product.updateMany({ where: { id: productId, orgId: org.id }, data: { active: false, published: false } });
   revalidatePath("/panel/productos");
   redirect("/panel/productos");

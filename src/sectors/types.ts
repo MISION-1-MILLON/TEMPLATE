@@ -32,6 +32,8 @@ export interface SectorTerms {
 }
 
 export interface SectorConfig {
+  /** Herramientas que se encienden al darse de alta (ids de src/lib/modules.ts); sin indicar = todas */
+  modules?: string[];
   id: string;
   name: string;
   /** Frase corta para la landing y el onboarding */

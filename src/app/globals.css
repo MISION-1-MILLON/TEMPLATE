@@ -2,54 +2,129 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Nexo · centro de mando
+ * Claro y sobrio (Linear, Stripe, Mercury): suelo neutro cálido, superficies blancas, tinta casi negra.
+ * Un tono de marca (verde viridiana) en la acción principal, la selección y la serie de datos principal.
+ * Movimiento según Emil Kowalski: ease-out fuerte, 150-250 ms, solo como respuesta; nada al teclear.
+ */
 :root {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --canvas: 250 250 249; --surface: 255 255 255; --sunken: 244 243 241; --line: 231 229 226;
+  --ink: 20 19 18;
+  --n-50: 247 247 245; --n-100: 240 239 237; --n-200: 230 228 225; --n-300: 211 208 204; --n-400: 138 134 128;
+  --n-500: 108 104 98; --n-600: 87 83 78; --n-700: 68 64 60; --n-800: 41 37 36; --n-900: 28 25 23; --n-950: 12 10 9;
+  --b-50: 236 246 243; --b-100: 208 234 226; --b-200: 163 212 197; --b-300: 109 184 163; --b-400: 61 154 131;
+  --b-500: 31 127 105; --b-600: 19 107 88; --b-700: 15 87 72; --b-800: 12 68 58; --b-900: 10 46 40; --b-950: 6 28 24;
+  --positive: 33 122 74; --negative: 196 36 42; --warning: 180 83 9;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --canvas: 12 12 11; --surface: 22 22 21; --sunken: 17 17 16; --line: 42 41 39;
+  --ink: 242 241 239;
+  --n-50: 20 20 19; --n-100: 28 27 26; --n-200: 42 41 39; --n-300: 58 56 54; --n-400: 125 121 116;
+  --n-500: 161 157 151; --n-600: 194 190 184; --n-700: 214 211 206; --n-800: 232 230 227; --n-900: 242 241 239; --n-950: 250 250 249;
+  --b-50: 15 36 32; --b-100: 18 48 42; --b-200: 23 70 60; --b-300: 31 99 83; --b-400: 44 139 116;
+  --b-500: 63 174 148; --b-600: 86 194 167; --b-700: 127 211 189; --b-800: 176 229 214; --b-900: 224 245 239; --b-950: 240 250 247;
+  --positive: 76 194 127; --negative: 239 106 120; --warning: 229 165 75;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --canvas: 12 12 11; --surface: 22 22 21; --sunken: 17 17 16; --line: 42 41 39;
+    --ink: 242 241 239;
+    --n-50: 20 20 19; --n-100: 28 27 26; --n-200: 42 41 39; --n-300: 58 56 54; --n-400: 125 121 116;
+    --n-500: 161 157 151; --n-600: 194 190 184; --n-700: 214 211 206; --n-800: 232 230 227; --n-900: 242 241 239; --n-950: 250 250 249;
+    --b-50: 15 36 32; --b-100: 18 48 42; --b-200: 23 70 60; --b-300: 31 99 83; --b-400: 44 139 116;
+    --b-500: 63 174 148; --b-600: 86 194 167; --b-700: 127 211 189; --b-800: 176 229 214; --b-900: 224 245 239; --b-950: 240 250 247;
+    --positive: 76 194 127; --negative: 239 106 120; --warning: 229 165 75;
+    color-scheme: dark;
+  }
 }
 
 body {
-  @apply bg-slate-50 text-ink antialiased;
+  @apply bg-canvas text-ink antialiased;
+  font-feature-settings: "ss01", "cv11";
 }
+::selection { background: rgb(var(--b-200)); color: rgb(var(--ink)); }
+* { scrollbar-width: thin; scrollbar-color: rgb(var(--n-300)) transparent; }
+:focus-visible { outline: 2px solid rgb(var(--b-500)); outline-offset: 2px; border-radius: 6px; }
+a { text-underline-offset: 3px; }
 
 @layer components {
+  /* Botones: presión con escala (Emil Kowalski); transición solo de lo que cambia */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex h-9 select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3.5 text-sm font-medium disabled:pointer-events-none disabled:opacity-50;
+    transition: transform 160ms var(--ease-out), background-color 150ms ease, border-color 150ms ease, color 150ms ease;
   }
-  .btn-primary {
-    @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700;
-  }
-  .btn-secondary {
-    @apply btn border border-slate-200 bg-white text-ink hover:bg-slate-50;
-  }
-  .btn-danger {
-    @apply btn border border-red-200 bg-white text-red-600 hover:bg-red-50;
-  }
-  .btn-ghost {
-    @apply btn text-slate-600 hover:bg-slate-100;
-  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700; }
+  .btn-secondary { @apply btn border border-slate-200 bg-white text-ink hover:border-slate-300 hover:bg-slate-50; }
+  .btn-ghost { @apply btn text-slate-600 hover:bg-slate-100 hover:text-ink; }
+  .btn-danger { @apply btn border border-slate-200 bg-white text-negative hover:border-negative/40 hover:bg-negative/5; }
+  .btn-lg { @apply h-11 px-5 text-[0.9375rem]; }
+  .btn-sm { @apply h-8 px-2.5 text-[0.8125rem]; }
+  .btn-icon { @apply btn h-9 w-9 px-0 text-slate-600 hover:bg-slate-100 hover:text-ink; }
+
   .input {
-    @apply block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
+    @apply block h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-ink outline-none placeholder:text-slate-400;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
   }
-  .label {
-    @apply mb-1 block text-sm font-medium text-slate-700;
+  textarea.input { @apply h-auto py-2; }
+  select.input { @apply pr-8; }
+  .input:hover { @apply border-slate-300; }
+  .input:focus { @apply border-brand-500; box-shadow: 0 0 0 3px rgb(var(--b-500) / 0.15); }
+  .label { @apply mb-1.5 block text-[0.8125rem] font-medium text-slate-700; }
+  .hint { @apply mt-1 text-xs text-slate-500; }
+
+  .card { @apply rounded-xl border border-slate-200 bg-white; }
+  .card-header { @apply flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-3.5; }
+  .card-title { @apply text-sm font-semibold text-ink; }
+
+  .table { @apply w-full text-left text-sm; font-variant-numeric: tabular-nums; }
+  .table th { @apply border-b border-slate-200 px-4 py-2.5 text-xs font-medium text-slate-500; }
+  .table td { @apply border-b border-slate-100 px-4 py-3 align-middle; }
+  .table tbody tr:last-child td { @apply border-b-0; }
+  .table tbody tr { transition: background-color 120ms ease; }
+  .table tbody tr:hover { @apply bg-slate-50; }
+
+  /* Interruptor: un checkbox nativo con forma de switch (accesible y sin JS) */
+  .switch {
+    @apply relative h-5 w-9 shrink-0 cursor-pointer appearance-none rounded-full bg-slate-300 transition-colors duration-200 ease-out checked:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50;
   }
-  .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  .switch::after {
+    content: "";
+    @apply absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-[0_1px_2px_rgb(0_0_0/0.2)] transition-transform duration-200 ease-out;
   }
-  .table {
-    @apply w-full text-left text-sm;
-  }
-  .table th {
-    @apply border-b border-slate-200 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-500;
-  }
-  .table td {
-    @apply border-b border-slate-100 px-4 py-3 align-middle;
-  }
-  .badge {
-    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
-  }
-  .display {
-    @apply font-black italic tracking-tight;
-  }
+  .switch:checked::after { transform: translateX(1rem); }
+  .switch:focus-visible { @apply outline-none ring-2 ring-brand-500/40 ring-offset-2 ring-offset-canvas; }
+  .badge { @apply inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-xs font-medium; }
+  .badge-neutral { @apply badge bg-slate-100 text-slate-600; }
+  .badge-brand { @apply badge bg-brand-50 text-brand-700; }
+  .badge-positive { @apply badge bg-positive/10 text-positive; }
+  .badge-negative { @apply badge bg-negative/10 text-negative; }
+  .badge-warning { @apply badge bg-warning/10 text-warning; }
+
+  /* Antes negrita cursiva; ahora el mismo peso de los títulos, con tracking ajustado */
+  .display { @apply font-semibold tracking-tight; }
+  .num { font-variant-numeric: tabular-nums; }
+  .kbd { @apply inline-flex h-5 min-w-5 items-center justify-center rounded border border-slate-200 bg-slate-50 px-1 font-sans text-2xs font-medium text-slate-500; }
+  .skeleton { @apply rounded-md bg-slate-100; }
+}
+
+/* Entrada de capas que flotan (menús, paleta, diálogos): desde 0.97, nunca desde 0 */
+@keyframes pop-in { from { opacity: 0; transform: scale(0.97) translateY(-2px); } }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes sheet-in { from { transform: translateY(100%); } }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+.animate-pop { animation: pop-in 160ms var(--ease-out) both; }
+.animate-fade { animation: fade-in 180ms ease both; }
+.animate-sheet { animation: sheet-in 320ms var(--ease-drawer) both; }
+.animate-rise { animation: rise 260ms var(--ease-out) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:active { transform: none; }
+  .animate-pop, .animate-sheet, .animate-rise { animation: fade-in 150ms ease both; }
 }
 
 @media print {

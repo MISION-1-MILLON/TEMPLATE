@@ -1,9 +1,6 @@
 import { SALE_STATUS } from "@/lib/utils";
+
 export function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    paid: "bg-emerald-50 text-emerald-700",
-    pending: "bg-amber-50 text-amber-700",
-    cancelled: "bg-slate-100 text-slate-500 line-through",
-  };
-  return <span className={`badge ${styles[status] ?? ""}`}>{SALE_STATUS[status] ?? status}</span>;
+  const style: Record<string, string> = { paid: "badge-positive", pending: "badge-warning", cancelled: "badge-neutral line-through" };
+  return <span className={style[status] ?? "badge-neutral"}>{status === "pending" ? "Por cobrar" : SALE_STATUS[status] ?? status}</span>;
 }

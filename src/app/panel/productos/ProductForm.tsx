@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { formatMoney, parseMoney } from "@/lib/money";
 import Link from "next/link";
+import { ImageIcon } from "lucide-react";
 import { saveProduct } from "./actions";
 import { FormError, SubmitButton } from "@/components/forms";
 import { SectorFields } from "@/components/SectorFields";
@@ -34,6 +35,7 @@ export function ProductForm({
   productFeminine = false,
   examplePlaceholder = "",
   defaultTaxRate,
+  showCost = true,
 }: {
   values: ProductFormValues;
   categories: { id: string; name: string }[];
@@ -42,6 +44,8 @@ export function ProductForm({
   productFeminine?: boolean;
   examplePlaceholder?: string;
   defaultTaxRate: string;
+  /** El coste y el margen solo los ve quien puede ver el beneficio */
+  showCost?: boolean;
 }) {
   const [state, action] = useActionState(saveProduct.bind(null, values.id ?? null), undefined);
 
@@ -58,7 +62,7 @@ export function ProductForm({
   return (
     <form action={action} className="space-y-6">
       <section className="card space-y-4 p-6">
-        <h2 className="text-lg font-bold">Lo básico</h2>
+        <h2 className="card-title">Lo básico</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label className="label" htmlFor="name">Nombre</label>
@@ -69,21 +73,21 @@ export function ProductForm({
             <input className="input text-base" id="price" name="price" inputMode="decimal" placeholder="0,00" value={price} onChange={(e) => setPrice(e.target.value)} />
             <p className="mt-1 text-xs text-slate-500">El precio que paga el cliente, con IVA incluido.</p>
           </div>
-          <div>
+          {showCost && <div>
             <label className="label" htmlFor="cost">¿Cuánto te costó a ti? (€, opcional)</label>
             <input className="input text-base" id="cost" name="cost" inputMode="decimal" placeholder="0,00" value={cost} onChange={(e) => setCost(e.target.value)} />
             <p className="mt-1 text-xs text-slate-500">Lo que pagaste al proveedor. Sirve para saber cuánto ganas.</p>
-          </div>
-          {priceN > 0 && costN > 0 && (
-            <p className={`sm:col-span-2 rounded-lg px-3 py-2 text-sm font-medium ${keep > 0 ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-700"}`}>
+          </div>}
+          {showCost && priceN > 0 && costN > 0 && (
+            <p className={`sm:col-span-2 rounded-lg px-3 py-2 text-sm ${keep > 0 ? "bg-brand-50 text-brand-800" : "bg-negative/10 text-negative"}`} role="status">
               {keep > 0
-                ? `💰 Te quedas ${formatMoney(Math.round(keep * 100))} por ${art} (después de pagar el IVA).`
-                : `⚠️ Con este precio pierdes ${formatMoney(Math.round(-keep * 100))} por ${art}. Sube el precio.`}
+                ? <>Te quedas <span className="num font-semibold">{formatMoney(Math.round(keep * 100))}</span> por {art}, después de pagar el IVA.</>
+                : <>Con este precio pierdes <span className="num font-semibold">{formatMoney(Math.round(-keep * 100))}</span> por {art}. Sube el precio.</>}
             </p>
           )}
           {!values.id && (
             <div>
-              <label className="label" htmlFor="stock">¿Cuántas unidades tienes ahora?</label>
+              <label className="label" htmlFor="stock">¿Cuántas unidades tienes en este local?</label>
               <input className="input text-base" id="stock" name="stock" type="number" min={0} defaultValue={values.stock} />
             </div>
           )}
@@ -102,7 +106,7 @@ export function ProductForm({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={image} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover ring-1 ring-slate-200" />
               ) : (
-                <span className="grid h-14 w-14 shrink-0 place-items-center rounded-lg bg-slate-100 text-2xl">📷</span>
+                <span className="grid h-14 w-14 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-400"><ImageIcon className="h-5 w-5" strokeWidth={1.75} /></span>
               )}
               <input className="input" id="imageUrl" name="imageUrl" type="url" placeholder="https://…" value={image} onChange={(e) => setImage(e.target.value)} />
             </div>
@@ -112,15 +116,15 @@ export function ProductForm({
 
       {fields.length > 0 && (
         <section className="card space-y-4 p-6">
-          <h2 className="text-lg font-bold">Detalles <span className="text-sm font-normal text-slate-500">(opcional)</span></h2>
+          <h2 className="card-title">Detalles <span className="text-sm font-normal text-slate-500">(opcional)</span></h2>
           <SectorFields fields={fields} values={values.attributes} />
         </section>
       )}
 
-      <details className="card p-6 [&_summary]:list-none">
-        <summary className="flex cursor-pointer items-center justify-between font-bold">
+      <details className="card group p-6 [&_summary]:list-none">
+        <summary className="flex cursor-pointer items-center justify-between font-semibold">
           Más opciones
-          <span className="text-sm font-normal text-brand-600">Mostrar</span>
+          <span className="text-sm font-normal text-slate-500 group-open:hidden">IVA, aviso de stock, referencia…</span>
         </summary>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
@@ -140,7 +144,7 @@ export function ProductForm({
             <label className="label" htmlFor="description">Descripción (sale en tu tienda online)</label>
             <textarea className="input min-h-24" id="description" name="description" defaultValue={values.description} />
           </div>
-          <div className="flex flex-wrap gap-6 text-sm font-medium text-slate-700 sm:col-span-2">
+          <div className="flex flex-wrap gap-6 text-sm text-slate-700 sm:col-span-2">
             <label className="flex items-center gap-2">
               <input type="checkbox" name="trackStock" defaultChecked={values.trackStock} className="h-4 w-4" />
               Llevar la cuenta de unidades
@@ -155,8 +159,8 @@ export function ProductForm({
 
       <FormError error={state?.error} />
       <div className="flex gap-2">
-        <SubmitButton className="btn-primary px-6 py-3 text-base">{values.id ? "Guardar cambios" : "Guardar"}</SubmitButton>
-        <Link href="/panel/productos" className="btn-secondary py-3">Cancelar</Link>
+        <SubmitButton className="btn-primary btn-lg">{values.id ? "Guardar cambios" : "Guardar"}</SubmitButton>
+        <Link href="/panel/productos" className="btn-secondary btn-lg">Cancelar</Link>
       </div>
     </form>
   );

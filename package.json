@@ -11,6 +11,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:new": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:pizzeria": "tsx prisma/pizzeria.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {
@@ -21,6 +22,7 @@
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^2.4.3",
     "jose": "^5.9.6",
+    "lucide-react": "^0.460.0",
     "next": "^15.5.28",
     "qrcode": "^1.5.4",
     "react": "^19.1.1",

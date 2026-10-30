@@ -275,7 +275,7 @@ function mockMarket(product: string): MarketOffer[] {
     seller: `${seller} (simulado)`,
     kind: (["fisica", "online", "marketplace"] as const)[i],
     price_eur: Math.round(base * (0.85 + r() * 0.35) * 100) / 100,
-    url: "https://example.com/",
+    url: "",
     product_title: product,
   }));
 }
@@ -289,7 +289,7 @@ function mockSuppliers(item: string, unit: string): SupplierOfferResult[] {
     price_includes_vat: false,
     unit,
     min_order: "",
-    url: "https://example.com/",
+    url: "",
     phone: "",
   }));
 }

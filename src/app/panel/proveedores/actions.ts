@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { aiEnabled } from "@/lib/ai-research";
-import { requireSession } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { latestSupplierOffers } from "@/lib/market";
 import { detectAndCreateSupplies, refreshStale, refreshSupplyItem, searchesLeftToday } from "@/lib/research";
@@ -13,7 +13,7 @@ const OFF = "La búsqueda automática aún no está activada en este servidor.";
 
 /** La IA deduce qué compra el negocio y después busca proveedores en segundo plano */
 export async function detectSuppliesAction(): Promise<SearchResult> {
-  const { org } = await requireSession();
+  const { org } = await requirePermission("market.use");
   if (!aiEnabled()) return { error: OFF };
   try {
     const created = await detectAndCreateSupplies(org);
@@ -28,7 +28,7 @@ export async function detectSuppliesAction(): Promise<SearchResult> {
 }
 
 export async function searchSupplyItem(itemId: string): Promise<SearchResult> {
-  const { org } = await requireSession();
+  const { org } = await requirePermission("market.use");
   if (!aiEnabled()) return { error: OFF };
   try {
     const n = await refreshSupplyItem(org, itemId, { maxAgeDays: 7 });
@@ -40,7 +40,7 @@ export async function searchSupplyItem(itemId: string): Promise<SearchResult> {
 }
 
 export async function searchAllSupplies(): Promise<SearchResult> {
-  const { org } = await requireSession();
+  const { org } = await requirePermission("market.use");
   if (!aiEnabled()) return { error: OFF };
   const left = await searchesLeftToday(org);
   if (left <= 0) return { error: "Has llegado al límite de búsquedas de hoy. Mañana seguimos." };
@@ -51,7 +51,7 @@ export async function searchAllSupplies(): Promise<SearchResult> {
 
 /** Elegir proveedor. Si es algo que se revende tal cual, su precio pasa a ser el coste del producto. */
 export async function chooseSupplier(itemId: string, supplierId: string) {
-  const { org } = await requireSession();
+  const { org } = await requirePermission("market.use");
   const item = await db.supplyItem.findFirst({ where: { id: itemId, orgId: org.id } });
   const supplier = await db.supplier.findFirst({ where: { id: supplierId, orgId: org.id } });
   if (!item || !supplier) return;
@@ -64,7 +64,7 @@ export async function chooseSupplier(itemId: string, supplierId: string) {
 }
 
 export async function addSupplyItem(form: FormData) {
-  const { org } = await requireSession();
+  const { org } = await requirePermission("market.use");
   const name = String(form.get("name") ?? "").trim().slice(0, 80);
   const unit = String(form.get("unit") ?? "unidad");
   if (!name) return;
@@ -80,13 +80,13 @@ export async function addSupplyItem(form: FormData) {
 }
 
 export async function deleteSupplyItem(id: string) {
-  const { org } = await requireSession();
+  const { org } = await requirePermission("market.use");
   await db.supplyItem.deleteMany({ where: { id, orgId: org.id } });
   revalidatePath("/panel/proveedores");
 }
 
 export async function deleteSupplier(id: string) {
-  const { org } = await requireSession();
+  const { org } = await requirePermission("market.use");
   await db.supplier.deleteMany({ where: { id, orgId: org.id } });
   revalidatePath("/panel/proveedores");
 }

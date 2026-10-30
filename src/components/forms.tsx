@@ -13,7 +13,7 @@ export function SubmitButton({ children, className = "btn-primary" }: { children
 
 export function FormError({ error }: { error?: string }) {
   if (!error) return null;
-  return <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>;
+  return <p className="rounded-lg bg-negative/10 px-3 py-2 text-sm text-negative" role="alert">{error}</p>;
 }
 
 export function ConfirmButton({

@@ -1,14 +1,14 @@
 import Link from "next/link";
-import { PageHeader, Stat } from "@/components/PageHeader";
+import { FilterChips, Figures, PageHeader } from "@/components/PageHeader";
 import { UpgradeNotice } from "@/components/UpgradeNotice";
-import { requireSession } from "@/lib/auth";
+import { requireModule } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatMoney } from "@/lib/money";
 import { zonedParts } from "@/lib/time";
-import { getModule, planIncludes } from "@/lib/modules";
+import { planIncludes } from "@/lib/modules";
 import { cn } from "@/lib/utils";
 
-export const metadata = { title: "Mercado" };
+export const metadata = { title: "Estadísticas" };
 
 const RANGES = { "7": "7 días", "30": "30 días", "90": "90 días", "365": "12 meses" } as const;
 const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
@@ -20,28 +20,31 @@ function Bars({ data, format = (v: number) => formatMoney(v) }: { data: { label:
       {data.map((d) => (
         <li key={d.label} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3 text-sm">
           <span className="truncate text-slate-600" title={d.label}>{d.label}</span>
-          <span className="h-2.5 rounded-full bg-slate-100">
-            <span className="block h-full rounded-full bg-brand-500" style={{ width: `${(d.value / max) * 100}%` }} />
+          <span className="h-2 rounded-full bg-slate-100">
+            {/* El color, solo en el dato que manda */}
+            <span className={cn("block h-full rounded-full", d.value === max ? "bg-brand-600" : "bg-slate-300")} style={{ width: `${(d.value / max) * 100}%` }} />
           </span>
-          <span className="text-right font-medium tabular-nums">{format(d.value)}</span>
+          <span className="num text-right font-medium">{format(d.value)}</span>
         </li>
       ))}
     </ul>
   );
 }
 
-export default async function MarketPage({ searchParams }: { searchParams: Promise<{ r?: string }> }) {
-  const { r } = await searchParams;
-  const { org, sector } = await requireSession();
-  const mod = getModule("mercado");
-  if (!planIncludes(org.plan, mod.plan)) return <UpgradeNotice module={mod} />;
+export default async function MarketPage({ searchParams }: { searchParams: Promise<{ r?: string; local?: string }> }) {
+  const { r, local: localParam } = await searchParams;
+  const { org, can, locations, module: mod } = await requireModule("mercado");
+  if (!planIncludes(org.plan, mod.plan)) return <UpgradeNotice module={mod} canUpgrade={can("billing.manage")} />;
+  const profitOk = can("finance.profit");
+  const local = locations.find((l) => l.id === localParam);
+  const locScope = local ? { locationId: local.id } : can("locations.all") ? {} : { locationId: { in: locations.map((l) => l.id) } };
 
   const range = (r && r in RANGES ? r : "30") as keyof typeof RANGES;
   const since = new Date(Date.now() - Number(range) * 86_400_000);
 
   const [sales, products] = await Promise.all([
     db.sale.findMany({
-      where: { orgId: org.id, status: { not: "cancelled" }, createdAt: { gte: since } },
+      where: { orgId: org.id, status: { not: "cancelled" }, createdAt: { gte: since }, ...locScope },
       include: { items: { include: { product: { include: { category: true } } } } },
     }),
     db.product.findMany({ where: { orgId: org.id, active: true }, include: { category: true } }),
@@ -81,51 +84,52 @@ export default async function MarketPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <PageHeader
-        title="Mercado"
-        subtitle="Qué se vende, cuánto deja y cuándo."
-        actions={
-          <div className="flex rounded-lg border border-slate-200 bg-white p-0.5">
-            {Object.entries(RANGES).map(([k, v]) => (
-              <Link key={k} href={`?r=${k}`} className={cn("rounded-md px-3 py-1.5 text-sm", range === k ? "bg-brand-600 text-white" : "text-slate-600")}>{v}</Link>
-            ))}
-          </div>
-        }
+        title="Estadísticas"
+        subtitle={profitOk ? "Qué se vende, cuánto deja y cuándo." : "Qué se vende y cuándo."}
+        actions={<FilterChips items={Object.entries(RANGES).map(([k, v]) => ({ label: v, href: `?${new URLSearchParams({ r: k, ...(local && { local: local.id }) })}`, active: range === k }))} />}
       />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Facturación" value={formatMoney(revenue)} />
-        <Stat label="Beneficio bruto" value={formatMoney(profit)} hint="Sobre productos con coste informado" />
-        <Stat label="Operaciones" value={String(sales.length)} hint={`Ticket medio ${formatMoney(sales.length ? Math.round(revenue / sales.length) : 0)}`} />
-        <Stat label="Unidades vendidas" value={units.toLocaleString("es-ES")} />
-      </div>
+      {locations.length > 1 && (
+        <div className="mb-4">
+          <FilterChips items={[{ id: "", name: "Todos los locales" }, ...locations].map((l) => ({ label: l.name, href: `?${new URLSearchParams({ r: range, ...(l.id && { local: l.id }) })}`, active: (local?.id ?? "") === l.id }))} />
+        </div>
+      )}
+      <Figures
+        items={[
+          { label: "Facturación", value: formatMoney(revenue) },
+          ...(profitOk ? [{ label: "Beneficio bruto", value: formatMoney(profit), hint: "Sobre productos con coste" }] : []),
+          { label: "Tickets", value: String(sales.length), hint: `Ticket medio ${formatMoney(sales.length ? Math.round(revenue / sales.length) : 0)}` },
+          { label: "Unidades vendidas", value: units.toLocaleString("es-ES") },
+        ]}
+      />
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <section className="card p-5">
-          <h2 className="mb-4 font-bold">Lo que más factura</h2>
+          <h2 className="card-title mb-4">Lo que más factura</h2>
           {top.length ? <Bars data={top.map((t) => ({ label: t.name, value: t.revenue }))} /> : <p className="text-sm text-slate-500">Sin ventas en este periodo.</p>}
         </section>
         <section className="card p-5">
-          <h2 className="mb-4 font-bold">Por categoría</h2>
+          <h2 className="card-title mb-4">Por categoría</h2>
           {byCategory.size ? <Bars data={[...byCategory.entries()].sort((a, b) => b[1] - a[1]).map(([label, value]) => ({ label, value }))} /> : <p className="text-sm text-slate-500">Sin datos.</p>}
         </section>
         <section className="card p-5">
-          <h2 className="mb-4 font-bold">Por día de la semana</h2>
+          <h2 className="card-title mb-4">Por día de la semana</h2>
           <Bars data={WEEKDAYS.map((label, i) => ({ label, value: byWeekday[i] }))} />
         </section>
         <section className="card p-5">
-          <h2 className="mb-4 font-bold">Horas punta</h2>
+          <h2 className="card-title mb-4">Horas punta</h2>
           {hours.length ? <Bars data={hours} /> : <p className="text-sm text-slate-500">Sin datos.</p>}
         </section>
         <section className="card p-5 lg:col-span-2">
-          <h2 className="font-bold">Stock parado</h2>
-          <p className="mb-3 text-sm text-slate-500">Con stock pero sin ninguna venta en los últimos {RANGES[range]}. Candidatos a promoción.</p>
+          <h2 className="card-title">Stock parado</h2>
+          <p className="mb-3 mt-1 text-sm text-slate-500">Con stock pero sin ninguna venta en los últimos {RANGES[range]}. Candidatos a promoción.</p>
           {stale.length === 0 ? (
-            <p className="text-sm text-slate-500">Nada parado. 👌</p>
+            <p className="text-sm text-slate-500">Nada parado: todo lo que tiene stock se ha vendido en este periodo.</p>
           ) : (
             <ul className="grid gap-2 sm:grid-cols-2">
               {stale.map((p) => (
-                <li key={p.id} className="flex justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">
-                  <Link href={`/panel/productos/${p.id}`} className="truncate hover:text-brand-600">{p.name}</Link>
-                  <span className="text-slate-500">{p.stock} uds · {formatMoney(p.costCents * p.stock)} inmovilizado</span>
+                <li key={p.id} className="flex justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm">
+                  <Link href={`/panel/productos/${p.id}`} className="truncate hover:underline">{p.name}</Link>
+                  <span className="num shrink-0 text-slate-500">{p.stock} uds{profitOk && p.costCents ? ` · ${formatMoney(p.costCents * p.stock)} parados` : ""}</span>
                 </li>
               ))}
             </ul>

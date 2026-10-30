@@ -49,7 +49,7 @@ export function PostComposer({ items, templates, hashtags, storeUrlPath, product
         .map(([k, v]) => `• ${k.replace(/_/g, " ").replace(/^\w/, (m) => m.toUpperCase())}: ${v}`);
       out = [item.vars.nombre, "", item.vars.descripcion, ...details, "", `Precio: ${item.vars.precio}`].filter((l, i, a) => l !== "" || a[i - 1] !== "").join("\n").trim();
     }
-    if (c.link && storeUrlPath && origin) out += `\n\n👉 ${origin}${storeUrlPath}`;
+    if (c.link && storeUrlPath && origin) out += `\n\n👉 ${origin}${storeUrlPath}`; // taste-skill-ignore: texto de una publicación para redes, no interfaz
     if (c.hashtags) out += `\n\n${hashtags.join(" ")}`;
     return out;
   }, [item, tpl, channel, templates, hashtags, storeUrlPath, origin]);

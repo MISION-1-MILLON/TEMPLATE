@@ -1,4 +1,5 @@
 import type { Organization } from "@prisma/client";
+import { Check } from "lucide-react";
 import { billingEnabled, TRIAL_DAYS } from "@/lib/billing";
 import { ConfirmButton } from "@/components/forms";
 import { PLANS } from "@/lib/modules";
@@ -20,12 +21,12 @@ export function BillingSection({ org, status, detail }: { org: Organization; sta
   const firstTime = !org.subscriptionStatus;
 
   return (
-    <section id="plan" className="card p-6">
+    <section id="plan" className="card scroll-mt-8 p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="font-bold">Plan y facturación</h2>
+          <h2 className="card-title">Plan y facturación</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Plan actual: <strong>{current.name}</strong>
+            Plan actual: <span className="font-medium text-ink">{current.name}</span>
             {org.subscriptionStatus === "trialing" && org.currentPeriodEnd && <> · prueba gratis hasta el {formatDate(org.currentPeriodEnd)}</>}
             {org.subscriptionStatus === "active" && org.currentPeriodEnd && !org.cancelAtPeriodEnd && <> · se renueva el {formatDate(org.currentPeriodEnd)}</>}
           </p>
@@ -39,22 +40,22 @@ export function BillingSection({ org, status, detail }: { org: Organization; sta
 
       {msg && (
         <p className={cn("mt-4 rounded-lg px-3 py-2 text-sm",
-          msg.tone === "ok" && "bg-emerald-50 text-emerald-800",
-          msg.tone === "warn" && "bg-amber-50 text-amber-800",
-          msg.tone === "error" && "bg-red-50 text-red-700")}>
+          msg.tone === "ok" && "bg-brand-50 text-brand-800",
+          msg.tone === "warn" && "bg-warning/10 text-warning",
+          msg.tone === "error" && "bg-negative/10 text-negative")}>
           {msg.text}
           {detail && <span className="mt-1 block text-xs opacity-80">Detalle de Stripe: {detail}</span>}
         </p>
       )}
       {org.subscriptionStatus === "past_due" && (
-        <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mt-4 rounded-lg bg-negative/10 px-3 py-2 text-sm text-negative">
           No hemos podido cobrar la última cuota. Actualiza tu tarjeta en «Tarjeta y facturas» para no perder el plan.
         </p>
       )}
       {org.cancelAtPeriodEnd && org.currentPeriodEnd && (
-        <form action={resumeSubscription} className="mt-4 flex flex-wrap items-center gap-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <form action={resumeSubscription} className="mt-4 flex flex-wrap items-center gap-3 rounded-lg bg-warning/10 px-3 py-2 text-sm text-warning">
           Tu suscripción termina el {formatDate(org.currentPeriodEnd)} y pasarás al plan Gratis.
-          <button className="font-semibold underline">Mantener mi plan</button>
+          <button className="font-medium underline">Mantener mi plan</button>
         </form>
       )}
       {!enabled && (
@@ -68,16 +69,17 @@ export function BillingSection({ org, status, detail }: { org: Organization; sta
           const isCurrent = org.plan === p.id;
           let label = "Cambiar";
           if (p.id === "free") label = subscribed ? "Cancelar suscripción" : "Cambiar";
+          else if (PLANS.indexOf(p) < PLANS.indexOf(current)) label = `Cambiar a ${p.name}`;
           else if (!subscribed) label = firstTime && enabled ? `Probar ${TRIAL_DAYS} días gratis` : `Contratar ${p.name}`;
           else label = `Cambiar a ${p.name}`;
           const confirmFree = p.id === "free" && subscribed;
           return (
-            <form key={p.id} action={changePlan} className={cn("flex flex-col rounded-xl border p-4", isCurrent ? "border-brand-600 ring-1 ring-brand-600" : "border-slate-200")}>
+            <form key={p.id} action={changePlan} className={cn("flex flex-col rounded-xl border p-4", isCurrent ? "border-ink" : "border-slate-200")}>
               <input type="hidden" name="plan" value={p.id} />
-              <p className="display text-xl uppercase">{p.name}</p>
-              <p className="text-sm text-slate-500">{p.priceMonthly} €/mes{p.priceMonthly ? " + IVA" : ""}</p>
-              <ul className="mt-3 flex-1 space-y-1 text-xs text-slate-600">
-                {p.features.slice(0, 4).map((f) => <li key={f}>✓ {f}</li>)}
+              <p className="font-semibold">{p.name}</p>
+              <p className="mt-0.5 text-sm text-slate-500"><span className="num text-2xl font-semibold tracking-tight text-ink">{p.priceMonthly} €</span> /mes{p.priceMonthly ? " + IVA" : ""}</p>
+              <ul className="mt-4 flex-1 space-y-1.5 text-xs text-slate-600">
+                {p.features.slice(0, 4).map((f) => <li key={f} className="flex gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-600" strokeWidth={2} />{f}</li>)}
               </ul>
               {confirmFree && !org.cancelAtPeriodEnd ? (
                 <ConfirmButton className="btn-ghost mt-4 w-full" message="¿Cancelar la suscripción? Mantienes tu plan hasta el final del periodo pagado y después pasas a Gratis.">

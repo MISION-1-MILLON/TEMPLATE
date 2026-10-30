@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConfirmButton } from "@/components/forms";
 import { MarketBar } from "@/components/MarketBar";
-import { requireSession } from "@/lib/auth";
+import { ArrowLeft } from "lucide-react";
+import { requireModule } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { latestCompetitorPrices, marketStats, POSITION_INFO } from "@/lib/market";
 import { formatMoney, splitTax } from "@/lib/money";
@@ -14,11 +15,12 @@ import { aiEnabled } from "@/lib/ai-research";
 
 export const maxDuration = 300;
 
-const KIND_ICON: Record<string, string> = { fisica: "🏬", online: "🌐", marketplace: "🛍️", bolsa: "🤝" };
+const KIND_LABEL: Record<string, string> = { fisica: "Tienda física", online: "Web", marketplace: "Marketplace", bolsa: "Bolsa" };
 
 export default async function ProductBenchmark({ params }: { params: Promise<{ productId: string }> }) {
   const { productId } = await params;
-  const { org } = await requireSession();
+  const { org, can } = await requireModule("competencia");
+  const profit = can("finance.profit");
   const [product, latestMap, history] = await Promise.all([
     db.product.findFirst({ where: { id: productId, orgId: org.id } }),
     latestCompetitorPrices(org.id, productId),
@@ -44,12 +46,13 @@ export default async function ProductBenchmark({ params }: { params: Promise<{ p
   const stats = marketStats(product.priceCents, prices);
   const info = POSITION_INFO[stats.position];
   const rate = product.taxRateBp ?? org.taxRateBp;
-  const keepAt = (price: number) => (product.costCents ? splitTax(price, rate).base - product.costCents : null);
+  // Lo que queda por unidad solo lo ve quien puede ver el beneficio
+  const keepAt = (price: number) => (profit && product.costCents ? splitTax(price, rate).base - product.costCents : null);
 
   // Ranking con "Tú" dentro
   const ranking = [
-    ...prices.map((p) => ({ key: p.id, name: p.competitorName, icon: KIND_ICON[p.competitorKind] ?? "🏬", price: p.priceCents, url: p.url, date: p.observedAt, me: false, title: p.note })),
-    { key: "me", name: `Tú (${org.name})`, icon: "⭐", price: product.priceCents, url: null, date: null, me: true, title: null },
+    ...prices.map((p) => ({ key: p.id, name: p.competitorName, kind: KIND_LABEL[p.competitorKind] ?? "", price: p.priceCents, url: p.url, date: p.observedAt, me: false, title: p.note })),
+    { key: "me", name: `Tú (${org.name})`, kind: "", price: product.priceCents, url: null, date: null, me: true, title: null },
   ].sort((a, b) => a.price - b.price || (a.me ? -1 : 1));
 
   const suggestions = stats.count
@@ -63,62 +66,61 @@ export default async function ProductBenchmark({ params }: { params: Promise<{ p
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/panel/competencia" className="btn-ghost -ml-3">← Competencia</Link>
+        <Link href="/panel/competencia" className="btn-ghost btn-sm -ml-2"><ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> Competencia</Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="display text-3xl">{product.name}</h1>
-          <span className={cn("badge text-sm", info.tone)}>{info.emoji} {info.label}</span>
+          <h1 className="text-2xl font-semibold tracking-tight">{product.name}</h1>
+          <span className={info.badge}>{info.label}</span>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <section className="card p-5 lg:col-span-2">
-          <h2 className="font-bold">🏁 Ranking de precios</h2>
-          <p className="mb-4 text-sm text-slate-500">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <section className="card p-5">
+          <h2 className="card-title">Ranking de precios</h2>
+          <p className="mb-4 mt-1 text-sm text-slate-500">
             {stats.count ? `Estás en el puesto ${stats.rank} de ${stats.count + 1} (1 = el más barato).` : "Todavía no hemos encontrado este producto en otros negocios ni en internet."}
           </p>
           {stats.count > 0 && <div className="mb-5"><MarketBar my={product.priceCents} min={stats.min} max={stats.max} avg={stats.avg} /></div>}
-          <ol className="space-y-1.5">
+          <ol className="divide-y divide-slate-100 border-t border-slate-100">
             {ranking.map((r, i) => (
-              <li key={r.key} className={cn("flex items-center gap-3 rounded-xl px-3 py-2.5", r.me ? "bg-brand-50 ring-2 ring-brand-500" : "bg-slate-50")}>
-                <span className="w-6 text-center font-black text-slate-400">{i + 1}</span>
-                <span className="text-lg">{r.icon}</span>
+              <li key={r.key} className={cn("-mx-2 flex items-center gap-3 rounded-lg px-2 py-2.5", r.me && "bg-brand-50")}>
+                <span className="num w-6 text-center text-sm text-slate-400">{i + 1}</span>
                 <span className="min-w-0 flex-1">
-                  <span className={cn("block truncate", r.me ? "font-bold text-brand-700" : "font-medium")}>
-                    {r.url ? <a href={r.url} target="_blank" className="hover:underline">{r.name} ↗</a> : r.name}
+                  <span className={cn("block truncate text-sm", r.me ? "font-semibold text-brand-800" : "font-medium")}>
+                    {r.url ? <a href={r.url} target="_blank" rel="noreferrer" className="hover:underline">{r.name} ↗</a> : r.name}
                   </span>
                   {(r.date || r.title) && !r.me && (
                     <span className="block truncate text-xs text-slate-500">
-                      {r.title ? `«${r.title}»` : ""}{r.date ? ` · visto en internet el ${formatDate(r.date)}` : " · en la bolsa"}
+                      {[r.kind, r.title && `«${r.title}»`, r.date ? `visto el ${formatDate(r.date)}` : "en la bolsa"].filter(Boolean).join(" · ")}
                     </span>
                   )}
                 </span>
-                <span className="font-bold tabular-nums">{formatMoney(r.price)}</span>
+                <span className="num font-semibold">{formatMoney(r.price)}</span>
               </li>
             ))}
           </ol>
         </section>
 
-        <aside className="space-y-6">
-          {suggestions.length > 0 && (
+        <aside className="space-y-4 lg:sticky lg:top-8">
+          {suggestions.length > 0 && can("products.manage") && (
             <section className="card p-5">
-              <h2 className="font-bold">💡 ¿Cambiar tu precio?</h2>
-              <p className="mb-3 text-xs text-slate-500">Ahora lo vendes a {formatMoney(product.priceCents)}{keepAt(product.priceCents) != null ? ` y te quedas ${formatMoney(keepAt(product.priceCents)!)} por unidad` : ""}.</p>
+              <h2 className="card-title">¿Cambiar tu precio?</h2>
+              <p className="mb-3 mt-1 text-xs text-slate-500">Ahora lo vendes a {formatMoney(product.priceCents)}{keepAt(product.priceCents) != null ? ` y te quedas ${formatMoney(keepAt(product.priceCents)!)} por unidad` : ""}.</p>
               <div className="space-y-2">
                 {suggestions.map((s) => {
                   const keep = keepAt(s.price);
                   return (
                     <form key={s.label} action={setMyPrice.bind(null, product.id)}>
                       <input type="hidden" name="priceCents" value={s.price} />
-                      <button className="flex w-full items-center justify-between rounded-xl border border-slate-200 px-3 py-2.5 text-left text-sm transition hover:border-brand-500 hover:bg-brand-50">
+                      <button className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2.5 text-left text-sm transition-[border-color,transform] duration-150 ease-out hover:border-slate-400 active:scale-[0.98]">
                         <span>
-                          <span className="block font-semibold">{s.label}</span>
+                          <span className="block font-medium">{s.label}</span>
                           {keep != null && (
-                            <span className={cn("text-xs", keep > 0 ? "text-emerald-700" : "text-red-600")}>
+                            <span className={cn("text-xs", keep > 0 ? "text-positive" : "text-negative")}>
                               {keep > 0 ? `Te quedarías ${formatMoney(keep)} por unidad` : `Perderías ${formatMoney(-keep)} por unidad`}
                             </span>
                           )}
                         </span>
-                        <span className="font-bold tabular-nums">{formatMoney(s.price)}</span>
+                        <span className="num font-semibold">{formatMoney(s.price)}</span>
                       </button>
                     </form>
                   );
@@ -128,7 +130,7 @@ export default async function ProductBenchmark({ params }: { params: Promise<{ p
           )}
           {aiEnabled() && (
             <section className="card p-5">
-              <h2 className="mb-1 font-bold">🔎 Actualizar precios</h2>
+              <h2 className="card-title mb-1">Actualizar precios</h2>
               <p className="mb-3 text-xs text-slate-500">Lo revisamos gratis una vez al mes. Si quieres, busca ahora (usa una de tus búsquedas extra del día).</p>
               <SearchButton action={searchProduct.bind(null, product.id)} label="Buscar en internet ahora" className="btn-primary w-full" />
             </section>
@@ -138,15 +140,15 @@ export default async function ProductBenchmark({ params }: { params: Promise<{ p
 
       {changes.length > 0 && (
         <section className="card">
-          <h2 className="border-b border-slate-100 px-5 py-3 font-bold">📜 Cambios de precio</h2>
+          <h2 className="card-header card-title">Cambios de precio</h2>
           <ul className="divide-y divide-slate-100 text-sm">
             {changes.map((h) => (
               <li key={h.id} className="flex items-center justify-between gap-3 px-5 py-2.5">
                 <span>{h.competitor.name} <span className="text-xs text-slate-500">· {formatDate(h.observedAt, true)}</span></span>
                 <span className="flex items-center gap-3">
-                  <span className="font-semibold tabular-nums">{formatMoney(h.priceCents)}</span>
+                  <span className="num font-medium">{formatMoney(h.priceCents)}</span>
                   <form action={deleteCompetitorPrice.bind(null, h.id)}>
-                    <ConfirmButton className="text-xs text-slate-400 hover:text-red-600" message="¿Borrar este precio?">✕</ConfirmButton>
+                    <ConfirmButton className="btn-ghost btn-sm text-slate-500 hover:text-negative" message="¿Borrar este precio?">Borrar</ConfirmButton>
                   </form>
                 </span>
               </li>

@@ -12,7 +12,7 @@ export const general: SectorConfig = {
   id: "general",
   name: "Cualquier negocio",
   tagline: "La base completa, sin campos específicos. Personalízala a tu medida.",
-  accent: "#4f46e5",
+  accent: "#57534e",
   terms: baseTerms,
   productFields: [
     { key: "marca", label: "Marca", type: "text", showInList: true },
@@ -22,8 +22,8 @@ export const general: SectorConfig = {
   defaultCategories: ["General"],
   trackStockByDefault: true,
   postTemplates: [
-    "✨ Nuevo en {negocio}: {nombre}\n\nPor solo {precio}. Pásate a verlo o escríbenos por privado.",
-    "{nombre} ya disponible 🙌\n\n{precio} · Unidades limitadas.",
+    "✨ Nuevo en {negocio}: {nombre}\n\nPor solo {precio}. Pásate a verlo o escríbenos por privado.", // taste-skill-ignore: texto de una publicación para redes, no interfaz
+    "{nombre} ya disponible 🙌\n\n{precio} · Unidades limitadas.", // taste-skill-ignore: texto de una publicación para redes, no interfaz
   ],
   hashtags: ["#novedad", "#comerciolocal", "#shoplocal"],
   demoProducts: [
@@ -51,8 +51,8 @@ export const zapatillas: SectorConfig = {
   defaultCategories: ["Running", "Lifestyle", "Basket", "Skate", "Ediciones limitadas"],
   trackStockByDefault: true,
   postTemplates: [
-    "🔥 DROP: {marca} {nombre}\nColorway: {colorway}\nTalla {talla} · {estado}\n\n💸 {precio}\n📩 Reserva por DM",
-    "Solo queda una 👟 {nombre} en talla {talla}.\n{precio}. El primero que escriba se la lleva.",
+    "🔥 DROP: {marca} {nombre}\nColorway: {colorway}\nTalla {talla} · {estado}\n\n💸 {precio}\n📩 Reserva por DM", // taste-skill-ignore: texto de una publicación para redes, no interfaz
+    "Solo queda una 👟 {nombre} en talla {talla}.\n{precio}. El primero que escriba se la lleva.", // taste-skill-ignore: texto de una publicación para redes, no interfaz
   ],
   hashtags: ["#sneakers", "#sneakerhead", "#kicks", "#zapatillas"],
   demoProducts: [
@@ -80,8 +80,8 @@ export const moda: SectorConfig = {
   defaultCategories: ["Camisetas", "Pantalones", "Vestidos", "Abrigos", "Accesorios"],
   trackStockByDefault: true,
   postTemplates: [
-    "Nueva colección {temporada} ✨\n{nombre} en {color}\nTallas disponibles · {precio}\n\nVen a probártelo o pídelo por DM 🛍️",
-    "Look del día: {nombre} ({material}) 🤍\n{precio}",
+    "Nueva colección {temporada} ✨\n{nombre} en {color}\nTallas disponibles · {precio}\n\nVen a probártelo o pídelo por DM 🛍️", // taste-skill-ignore: texto de una publicación para redes, no interfaz
+    "Look del día: {nombre} ({material}) 🤍\n{precio}", // taste-skill-ignore: texto de una publicación para redes, no interfaz
   ],
   hashtags: ["#moda", "#outfit", "#nuevacoleccion", "#tiendademoda"],
   demoProducts: [
@@ -108,8 +108,8 @@ export const restauracion: SectorConfig = {
   defaultCategories: ["Entrantes", "Principales", "Postres", "Bebidas"],
   trackStockByDefault: false,
   postTemplates: [
-    "Hoy en {negocio} 🍽️\n{nombre} · {racion}\n{precio}\n\n📍 Te esperamos. Reserva por DM o llamando.",
-    "¿Ya has probado nuestro {nombre}? 😋\nSolo {precio}.",
+    "Hoy en {negocio} 🍽️\n{nombre} · {racion}\n{precio}\n\n📍 Te esperamos. Reserva por DM o llamando.", // taste-skill-ignore: texto de una publicación para redes, no interfaz
+    "¿Ya has probado nuestro {nombre}? 😋\nSolo {precio}.", // taste-skill-ignore: texto de una publicación para redes, no interfaz
   ],
   hashtags: ["#gastronomia", "#foodie", "#restaurante", "#comerbien"],
   demoProducts: [
@@ -140,7 +140,7 @@ export const motor: SectorConfig = {
   defaultCategories: ["Turismos", "SUV", "Furgonetas", "Motos"],
   trackStockByDefault: true,
   postTemplates: [
-    "🚗 {marca} {nombre} ({anio})\n{km} km · {combustible} · {cambio}\n\n💶 {precio}\nFinanciación a tu medida. Escríbenos.",
+    "🚗 {marca} {nombre} ({anio})\n{km} km · {combustible} · {cambio}\n\n💶 {precio}\nFinanciación a tu medida. Escríbenos.", // taste-skill-ignore: texto de una publicación para redes, no interfaz
   ],
   hashtags: ["#cochesdeocasion", "#vehiculos", "#concesionario"],
   demoProducts: [

@@ -1,174 +1,217 @@
 import Link from "next/link";
+import { ArrowRight, Check } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { ModuleIcon } from "@/components/ModuleIcon";
+import { Pulse, type PulseSale } from "@/components/Pulse";
 import { BRAND } from "@/lib/brand";
+import { formatMoney } from "@/lib/money";
 import { MODULES, PLANS } from "@/lib/modules";
 import { SECTOR_LIST } from "@/sectors";
 
+/** Un día de ejemplo para el pulso de la portada (siempre el mismo: nada aleatorio) */
+function demoDay(seed: number, n: number): PulseSale[] {
+  let x = seed;
+  const rnd = () => ((x = (x * 9301 + 49297) % 233280) / 233280);
+  return Array.from({ length: n }, () => {
+    const lunch = rnd() < 0.55;
+    const at = lunch ? 780 + rnd() * 150 : 1200 + rnd() * 150;
+    return { at: Math.round(at), cents: Math.round((8 + rnd() * 52) * 100), label: "Venta" };
+  });
+}
+
+const PROFILES = [
+  {
+    role: "Dueño",
+    lead: "Lo ve y lo decide todo.",
+    points: ["Beneficio y márgenes por producto", "Todos los locales, juntos o por separado", "Equipo, plan y herramientas"],
+  },
+  {
+    role: "Gerente",
+    lead: "Lleva el día a día de sus locales.",
+    points: ["Ventas, caja y stock de su local", "Invita y organiza a los empleados", "Competencia y proveedores, sin ver márgenes"],
+  },
+  {
+    role: "Empleado",
+    lead: "Vende y cobra, sin distracciones.",
+    points: ["Un TPV rápido en móvil o tablet", "Descuentos en el ticket", "Entradas, recuentos y mermas de stock"],
+  },
+  {
+    role: "Gestoría",
+    lead: "Consulta y exporta, sin tocar nada.",
+    points: ["Facturas con base e IVA", "IVA repercutido por trimestre", "CSV listo para su programa"],
+  },
+];
+
 export default function Home() {
+  const today = demoDay(7, 26);
+  const lastWeek = demoDay(19, 22);
+  const sold = today.filter((s) => s.at <= 1260).reduce((a, s) => a + s.cents, 0);
+
   return (
-    <div className="bg-white">
-      <header className="sticky top-0 z-20 border-b border-slate-100 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+    <div className="min-h-screen bg-canvas">
+      <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-canvas/85 backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Logo />
-          <nav className="hidden gap-8 text-sm font-semibold uppercase tracking-wide text-slate-600 md:flex">
-            <a href="#herramientas" className="hover:text-brand-600">Software</a>
-            <a href="#sectores" className="hover:text-brand-600">Sectores</a>
-            <a href="#precios" className="hover:text-brand-600">Precios</a>
+          <nav className="hidden gap-7 text-sm text-slate-600 md:flex" aria-label="Secciones">
+            <a href="#perfiles" className="transition-colors duration-150 hover:text-ink">Perfiles</a>
+            <a href="#herramientas" className="transition-colors duration-150 hover:text-ink">Herramientas</a>
+            <a href="#sectores" className="transition-colors duration-150 hover:text-ink">Sectores</a>
+            <a href="#precios" className="transition-colors duration-150 hover:text-ink">Precios</a>
           </nav>
-          <div className="flex items-center gap-2">
-            <Link href="/acceder" className="btn-ghost uppercase">Acceder</Link>
-            <Link href="/registro" className="btn-primary display uppercase">Empieza gratis</Link>
+          <div className="flex items-center gap-1.5">
+            <Link href="/acceder" className="btn-ghost btn-sm">Acceder</Link>
+            <Link href="/registro" className="btn-primary btn-sm">Empieza gratis</Link>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="mx-auto max-w-5xl px-4 pb-16 pt-20 text-center">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-brand-600">El software para tu negocio, sea cual sea</p>
-        <h1 className="display mt-4 text-4xl leading-[1.05] sm:text-6xl">
-          Vende, vigila a tu competencia y compra más barato
-        </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
-          Tres herramientas en una, tan fáciles como un juego: <strong>una caja registradora</strong>, un vigilante de
-          <strong> precios de la competencia</strong> y un buscador de <strong>proveedores más baratos</strong>. Tú vendes; del resto nos encargamos nosotros.
-        </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link href="/registro" className="btn-primary display px-6 py-3 text-base uppercase">Empieza gratis</Link>
-          <a href="#sectores" className="btn-secondary display px-6 py-3 text-base uppercase">Ver sectores</a>
+      {/* Hero: la promesa y, debajo, el producto de verdad */}
+      <section className="mx-auto max-w-6xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24">
+        <div className="max-w-3xl">
+          <p className="text-sm font-medium text-brand-700">Centro de mando para negocios con mostrador</p>
+          <h1 className="mt-3 text-4xl font-semibold leading-[1.05] tracking-tight text-balance sm:text-6xl">
+            Todo tu negocio, en una pantalla
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg text-slate-600 text-pretty">
+            Y cada persona, en la suya. Ventas, caja, stock, clientes y facturas sobre los mismos datos: el dueño ve el beneficio,
+            el gerente lleva su local, el empleado vende y la gestoría descarga el IVA.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/registro" className="btn-primary btn-lg">Empieza gratis <ArrowRight className="h-4 w-4" strokeWidth={2} /></Link>
+            <a href="#perfiles" className="btn-secondary btn-lg">Ver cómo funciona</a>
+          </div>
+          <p className="mt-4 text-sm text-slate-500">Sin tarjeta. Preparado para tu sector en dos minutos.</p>
         </div>
-        <p className="mt-4 text-sm text-slate-500">Sin tarjeta. Configurado para tu sector en 2 minutos.</p>
+
+        <figure className="card mt-14 overflow-hidden">
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3 text-sm">
+            <span className="font-medium">El pulso del día <span className="font-normal text-slate-500">· Centro</span></span>
+            <span className="num text-slate-500">21:00</span>
+          </div>
+          <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
+            <div>
+              <p className="text-sm text-slate-500">Vendido hoy</p>
+              <p className="num mt-1 text-4xl font-semibold tracking-tight">{formatMoney(sold)}</p>
+              <p className="mt-1 text-sm text-positive">+12 % que el mismo día de la semana pasada</p>
+              <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
+                <div><dt className="text-slate-500">Tickets</dt><dd className="num mt-0.5 font-medium">{today.filter((s) => s.at <= 1260).length}</dd></div>
+                <div><dt className="text-slate-500">Requiere atención</dt><dd className="mt-0.5 font-medium">2 avisos</dd></div>
+              </dl>
+            </div>
+            <Pulse opensAt="12:00" closesAt="23:30" today={today.filter((s) => s.at <= 1260)} lastWeek={lastWeek} nowMin={1260} />
+          </div>
+          <figcaption className="sr-only">Ejemplo del inicio del panel: las ventas del día en su hora, frente a la semana pasada.</figcaption>
+        </figure>
+      </section>
+
+      {/* Perfiles */}
+      <section id="perfiles" className="border-t border-slate-200 bg-surface py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Cada perfil ve lo suyo, y nada más</h2>
+          <p className="mt-3 max-w-2xl text-slate-600">Los permisos se comprueban en el servidor, no solo en la pantalla: un empleado no puede ver tus márgenes aunque lo intente.</p>
+          <div className="mt-12 grid gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 sm:grid-cols-2 lg:grid-cols-4">
+            {PROFILES.map((p) => (
+              <article key={p.role} className="bg-surface p-6">
+                <h3 className="font-semibold">{p.role}</h3>
+                <p className="mt-1 text-sm text-slate-600">{p.lead}</p>
+                <ul className="mt-5 space-y-2.5 text-sm">
+                  {p.points.map((x) => (
+                    <li key={x} className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" strokeWidth={2} />{x}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+          <p className="mt-6 text-sm text-slate-500">¿Varios locales? Cada uno con su caja, su stock y su equipo. Cambias de local desde la barra lateral.</p>
+        </div>
+      </section>
+
+      {/* Recorrido de un dato */}
+      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+        <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Una venta, todo el recorrido</h2>
+        <p className="mt-3 max-w-2xl text-slate-600">Nada de hojas sueltas ni de copiar entre aplicaciones. Lo que pasa en el mostrador llega solo a todas partes.</p>
+        <ol className="mt-10 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-5">
+          {[
+            ["Ficha", "El producto, con los campos de tu sector."],
+            ["Venta", "Se cobra en segundos desde el TPV."],
+            ["Stock", "Se descuenta en el local donde se vendió."],
+            ["Caja", "Entra en la caja de ese local, por forma de pago."],
+            ["Factura", "Queda numerada, con su base y su IVA."],
+          ].map(([t, d], i) => (
+            <li key={t} className="border-t border-slate-200 pt-4">
+              <span className="num text-sm text-slate-400">0{i + 1}</span>
+              <h3 className="mt-1 font-semibold">{t}</h3>
+              <p className="mt-1 text-sm text-slate-600">{d}</p>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* Herramientas */}
-      <section id="herramientas" className="mx-auto max-w-6xl px-4 py-12">
-        <div className="grid gap-4 md:grid-cols-3">
-          {MODULES.slice(0, 3).map((m, i) => (
-            <div key={m.id} className="card p-7">
-              <div className="flex items-center gap-4">
-                <ModuleIcon id={m.id} />
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Sección {i + 1}</p>
-                  <h3 className="display text-3xl uppercase">{m.name}</h3>
-                </div>
+      <section id="herramientas" className="border-t border-slate-200 bg-surface py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Enciende solo lo que uses</h2>
+          <p className="mt-3 max-w-2xl text-slate-600">La caja es el núcleo. Lo demás son herramientas que cada negocio activa o apaga en Ajustes.</p>
+          <div className="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+            {MODULES.map((m) => (
+              <div key={m.id}>
+                <ModuleIcon id={m.id} className="h-5 w-5 text-slate-500" />
+                <h3 className="mt-3 flex items-center gap-2 font-semibold">{m.name}{m.status === "soon" && <span className="badge-neutral">Pronto</span>}</h3>
+                <p className="mt-1 text-sm text-slate-600">{m.summary}</p>
               </div>
-              <p className="mt-4 text-lg font-semibold">{m.summary}</p>
-              <p className="mt-2 text-slate-600">{m.description}</p>
-            </div>
-          ))}
-        </div>
-        <p className="mt-10 text-center text-sm font-bold uppercase tracking-widest text-slate-400">Y además</p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {MODULES.slice(3).map((m) => (
-            <div key={m.id} className="card flex items-start gap-3 p-4">
-              <ModuleIcon id={m.id} size="sm" />
-              <div>
-                <p className="font-bold">{m.name}{m.status === "soon" && <span className="badge ml-2 bg-slate-100 text-[10px] text-slate-500">Pronto</span>}</p>
-                <p className="text-xs text-slate-500">{m.summary}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Flujo de datos */}
-      <section className="bg-ink py-20 text-white">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="display text-3xl sm:text-4xl">Un dato, todo el recorrido</h2>
-          <p className="mt-3 max-w-2xl text-slate-300">
-            Nada de hojas de cálculo sueltas ni copiar y pegar entre aplicaciones. Así viaja una venta por {BRAND.name}:
-          </p>
-          <ol className="mt-10 grid gap-4 md:grid-cols-5">
-            {[
-              ["Alta", "Das de alta el producto con los campos de tu sector."],
-              ["Escaparate", "Aparece al instante en tu tienda o carta online."],
-              ["Venta", "Lo vendes desde el panel o el móvil en segundos."],
-              ["Stock y caja", "Se descuenta del stock y entra en caja automáticamente."],
-              ["Factura", "La factura queda lista y el cliente, registrado."],
-            ].map(([t, d], i) => (
-              <li key={t} className="rounded-xl border border-white/10 bg-white/5 p-5">
-                <span className="display text-3xl text-brand-500">0{i + 1}</span>
-                <h3 className="mt-2 font-bold">{t}</h3>
-                <p className="mt-1 text-sm text-slate-300">{d}</p>
-              </li>
             ))}
-          </ol>
+          </div>
         </div>
       </section>
 
       {/* Sectores */}
-      <section id="sectores" className="mx-auto max-w-6xl px-4 py-20">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-brand-600">Una base, cualquier sector</p>
-        <h2 className="display mt-2 text-3xl sm:text-4xl">Hecho para tu negocio, no para uno genérico</h2>
-        <p className="mt-3 max-w-2xl text-slate-600">
-          Al registrarte eliges tu sector y el panel se adapta: vocabulario, campos, categorías y plantillas.
-          ¿Necesitas algo más específico? Lo personalizamos contigo.
-        </p>
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <section id="sectores" className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+        <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Habla el idioma de tu sector</h2>
+        <p className="mt-3 max-w-2xl text-slate-600">Al darte de alta eliges tu sector y el panel se adapta: platos o productos, alérgenos o tallas, carta o tienda.</p>
+        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {SECTOR_LIST.map((s) => (
-            <Link
-              key={s.id}
-              href={`/registro?sector=${s.id}`}
-              className="card group p-6 transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <span className="block h-1.5 w-12 rounded-full" style={{ background: s.accent }} />
-              <h3 className="mt-4 text-lg font-bold">{s.name}</h3>
+            <Link key={s.id} href={`/registro?sector=${s.id}`} className="card group p-5 transition-[border-color,transform] duration-200 ease-out hover:border-slate-300 active:scale-[0.99]">
+              <h3 className="font-semibold">{s.name}</h3>
               <p className="mt-1 text-sm text-slate-600">{s.tagline}</p>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {s.productFields.slice(0, 4).map((f) => (
-                  <span key={f.key} className="badge bg-slate-100 text-slate-600">{f.label}</span>
-                ))}
-              </div>
-              <span className="mt-4 inline-block text-sm font-semibold text-brand-600 group-hover:underline">
-                Empezar como {s.name.toLowerCase()} →
+              <p className="mt-4 flex flex-wrap gap-1.5">
+                {s.productFields.slice(0, 4).map((f) => <span key={f.key} className="badge-neutral">{f.label}</span>)}
+              </p>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand-700">
+                Empezar <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 ease-out group-hover:translate-x-0.5" strokeWidth={2} />
               </span>
             </Link>
           ))}
-          <div className="card flex flex-col justify-center border-dashed p-6">
-            <h3 className="text-lg font-bold">¿Tu sector no está?</h3>
-            <p className="mt-1 text-sm text-slate-600">
-              Empieza con la versión general y te ayudamos a crear tus propios campos, categorías y flujos.
-            </p>
-            <Link href="/registro?sector=general" className="mt-4 text-sm font-semibold text-brand-600 hover:underline">
-              Empezar con la versión general →
-            </Link>
-          </div>
         </div>
       </section>
 
       {/* Precios */}
-      <section id="precios" className="bg-slate-50 py-20">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="display text-center text-3xl sm:text-4xl">Precios claros</h2>
-          <p className="mt-3 text-center text-slate-600">Empieza gratis y sube de plan cuando lo necesites. Los planes de pago incluyen 14 días de prueba. IVA no incluido.</p>
+      <section id="precios" className="border-t border-slate-200 bg-surface py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Precios claros</h2>
+          <p className="mt-3 text-slate-600">Empieza gratis. Los planes de pago incluyen 14 días de prueba. IVA no incluido.</p>
           <div className="mt-10 grid gap-4 md:grid-cols-3">
             {PLANS.map((p) => (
-              <div key={p.id} className={`card flex flex-col p-6 ${p.highlighted ? "ring-2 ring-brand-600" : ""}`}>
-                <h3 className="display text-2xl uppercase">{p.name}</h3>
+              <div key={p.id} className={`card flex flex-col p-6 ${p.highlighted ? "border-ink" : ""}`}>
+                <h3 className="font-semibold">{p.name}</h3>
                 <p className="mt-1 text-sm text-slate-500">{p.blurb}</p>
-                <p className="mt-4">
-                  <span className="display text-4xl">{p.priceMonthly} €</span>
-                  <span className="text-slate-500"> /mes</span>
-                </p>
+                <p className="mt-5"><span className="num text-4xl font-semibold tracking-tight">{p.priceMonthly} €</span><span className="text-slate-500"> /mes</span></p>
                 <ul className="mt-6 flex-1 space-y-2 text-sm">
-                  {p.features.map((f) => (
-                    <li key={f} className="flex gap-2">
-                      <span className="text-brand-600">✓</span>
-                      {f}
-                    </li>
-                  ))}
+                  {p.features.map((f) => <li key={f} className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" strokeWidth={2} />{f}</li>)}
                 </ul>
-                <Link href="/registro" className={`${p.highlighted ? "btn-primary" : "btn-secondary"} mt-6 uppercase`}>
-                  {p.priceMonthly === 0 ? "Empieza gratis" : `Probar 14 días gratis`}
-                </Link>
+                <Link href="/registro" className={`${p.highlighted ? "btn-primary" : "btn-secondary"} mt-6`}>{p.priceMonthly === 0 ? "Empieza gratis" : "Probar 14 días gratis"}</Link>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-slate-100 py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 text-sm text-slate-500 sm:flex-row">
+      <section className="mx-auto max-w-6xl px-4 py-20 text-center sm:px-6">
+        <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Abre el panel hoy y vende esta tarde</h2>
+        <Link href="/registro" className="btn-primary btn-lg mt-8">Empieza gratis <ArrowRight className="h-4 w-4" strokeWidth={2} /></Link>
+      </section>
+
+      <footer className="border-t border-slate-200 py-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 text-sm text-slate-500 sm:flex-row sm:px-6">
           <Logo />
           <p>© {new Date().getFullYear()} {BRAND.name}. {BRAND.claim}.</p>
         </div>

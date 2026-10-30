@@ -1,9 +1,9 @@
 import { PageHeader } from "@/components/PageHeader";
-import { requireSession } from "@/lib/auth";
+import { requirePagePermission } from "@/lib/auth";
 import { CustomerForm } from "../CustomerForm";
 
 export default async function NewCustomerPage() {
-  const { sector } = await requireSession();
+  const { sector } = await requirePagePermission("customers.manage");
   return (
     <>
       <PageHeader title={`Nuevo ${sector.terms.customer.toLowerCase()}`} />

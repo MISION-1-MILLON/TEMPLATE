@@ -123,6 +123,10 @@ En el restaurante hay además un usuario de cada perfil, para ver cómo cambia e
 - `demo+staff@nexo.app`: Leo, empleado del local Centro
 - `demo+accountant@nexo.app`: la gestoría (solo consulta y exporta)
 
+Ejemplo completo de un negocio con dos locales: `npm run db:seed:pizzeria` crea la Pizzería Bella Napoli
+(Chamberí y Lavapiés, 45 días de ventas, stock, caja, competencia y proveedores). Dueña: `demo+pizzeria@nexo.app` / `demo1234`;
+su equipo entra con `demo+pizzeria.gerente@`, `demo+pizzeria.camarera@`, `demo+pizzeria.camarero@` y `demo+pizzeria.gestoria@nexo.app`, con la misma contraseña.
+
 ## Arquitectura
 
 - **Next.js 15** (App Router, Server Components y Server Actions) + **TypeScript** + **Tailwind**

@@ -11,6 +11,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:new": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:pizzeria": "tsx prisma/pizzeria.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

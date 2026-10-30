@@ -287,7 +287,7 @@ function CommandPalette({ items, actions, locations, onClose }: { items: NavItem
               else if (e.key === "Enter") { e.preventDefault(); run(sel); }
             }}
             placeholder="Buscar una pantalla o una acción…"
-            className="h-12 flex-1 bg-transparent text-[0.9375rem] outline-none placeholder:text-slate-400"
+            className="h-12 flex-1 bg-transparent text-[0.9375rem] outline-none focus-visible:outline-none placeholder:text-slate-400"
             aria-label="Buscar"
           />
           <kbd className="kbd">Esc</kbd>

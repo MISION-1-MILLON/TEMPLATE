@@ -49,7 +49,7 @@ export function buildNav(s: PanelSession): { groups: NavGroup[]; tabs: NavItem[]
       items: [
         { href: "/panel", label: s.role === "staff" ? "Mi turno" : "Inicio", icon: "home" },
         ...item(s.can("sales.create"), { href: "/panel/ventas/nueva", label: "Vender", icon: "pos" }),
-        { href: "/panel/ventas", label: s.can("sales.viewAll") ? "Ventas" : "Mis ventas de hoy", icon: "receipt" },
+        { href: "/panel/ventas", label: s.can("sales.viewAll") ? "Ventas" : "Mis ventas", icon: "receipt" },
         ...item(s.can("cash.view"), { href: "/panel/caja", label: "Caja", icon: "wallet" }),
       ],
     },

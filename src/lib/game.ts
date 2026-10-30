@@ -132,3 +132,32 @@ export const getProgress = cache(async function getProgress(org: {
 
   return { xp, level: levelFor(xp), missions, todayCents, goalCents, goalIsAuto, streak, salesCount };
 });
+
+export interface SaleReward {
+  xp: number;
+  notes: string[];
+  levelUp?: { level: number; name: string };
+}
+
+/** Qué ha sumado una venta recién hecha: XP, misiones, objetivo, racha y nivel */
+export async function saleReward(org: Parameters<typeof getProgress>[0], totalCents: number): Promise<SaleReward> {
+  const p = await getProgress(org);
+  const notes: string[] = [];
+  let xp = XP_PER_SALE;
+  const unlocked = (id: string, cond: boolean) => {
+    const m = p.missions.find((x) => x.id === id);
+    if (m?.done && cond) {
+      xp += m.xp;
+      notes.push(`Misión cumplida: ${m.title}`);
+    }
+  };
+  const before = p.todayCents - totalCents;
+  unlocked("venta", p.salesCount === 1);
+  unlocked("diez", p.salesCount === 10);
+  unlocked("cien", p.salesCount === 100);
+  unlocked("racha", p.streak === 3 && before === 0);
+  if (before < p.goalCents && p.todayCents >= p.goalCents) notes.push("Objetivo del día cumplido");
+  if (p.streak > 1 && before === 0) notes.push(`${p.streak} días seguidos vendiendo`);
+  const prev = levelFor(p.xp - xp);
+  return { xp, notes, levelUp: prev.level < p.level.level ? { level: p.level.level, name: p.level.name } : undefined };
+}

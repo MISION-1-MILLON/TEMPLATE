@@ -112,7 +112,8 @@ export function Shell(p: ShellProps) {
       </header>
 
       <main className="pb-24 lg:pb-0 lg:pl-60">
-        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-10 lg:py-8">{p.children}</div>
+        {/* El TPV ocupa todo el ancho: el ticket va pegado al borde */}
+        <div className={cn("px-4 py-6 sm:px-6 lg:py-8", pathname === "/panel/ventas/nueva" ? "lg:pl-8 lg:pr-0" : "mx-auto max-w-6xl lg:px-10")}>{p.children}</div>
       </main>
 
       {/* ── Barra inferior (móvil): lo más usado por el perfil ── */}

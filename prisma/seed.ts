@@ -76,14 +76,18 @@ async function main() {
     await db.location.update({ where: { id: main }, data: { name: "Centro", address: "Calle Mayor 1, Madrid", opensAt: "10:00", closesAt: "23:00" } });
     // Restauración: segundo local y un usuario de cada perfil para probar los cuatro centros de mando
     const locations = [main];
+    // Quién vende en cada local (en restauración, también el equipo)
+    const sellers = new Map<string, string[]>([[main, [user.id]]]);
     if (sector.id === "restauracion") {
       const second = await db.location.create({ data: { orgId: org.id, name: "Malasaña", address: "Calle del Pez 12, Madrid", opensAt: "12:00", closesAt: "00:00" } });
       locations.push(second.id);
+      sellers.set(second.id, [user.id]);
       const hash = await bcrypt.hash("demo1234", 10);
       for (const [role, name, locs] of [["manager", "Marta Gerente", [main]], ["staff", "Leo Empleado", [main]], ["accountant", "Asesoría López", []]] as const) {
         const roleEmail = `demo+${role}@nexo.app`;
         await db.user.deleteMany({ where: { email: roleEmail } });
-        await db.user.create({ data: { email: roleEmail, name, passwordHash: hash, memberships: { create: { orgId: org.id, role, locationIds: [...locs] } } } });
+        const member = await db.user.create({ data: { email: roleEmail, name, passwordHash: hash, memberships: { create: { orgId: org.id, role, locationIds: [...locs] } } } });
+        if (role !== "accountant") sellers.get(main)!.push(member.id);
         console.log(`  · ${name}: ${roleEmail} / demo1234`);
       }
     }
@@ -104,16 +108,20 @@ async function main() {
     for (let i = 0; i < salesCount; i++) {
       const lines = Array.from({ length: 1 + rand(sector.id === "restauracion" ? 4 : 2) }, () => products[rand(products.length)]);
       const items = [...new Map(lines.map((p) => [p.id, { productId: p.id, quantity: 1 + rand(2) }])).values()];
+      // Las primeras, de hoy en el local principal: así cada perfil tiene su turno con ventas
+      const today = i < 10;
+      const loc = today ? main : locations[rand(locations.length)];
+      const team = sellers.get(loc)!;
       try {
-        const sale = await createSale(org.id, locations[rand(locations.length)], user.id, {
+        const sale = await createSale(org.id, loc, today ? team[i % team.length] : team[rand(team.length)], {
           customerId: Math.random() < 0.5 ? customers[rand(customers.length)].id : null,
           paymentMethod: ["card", "card", "cash", "bizum"][rand(4)],
           status: Math.random() < 0.08 ? "pending" : "paid",
           items,
         });
         // Repartir las ventas en los últimos 60 días, en horario comercial
-        const d = new Date(Date.now() - rand(60) * 86_400_000);
-        d.setHours(10 + rand(11), rand(60));
+        const d = today ? new Date(Date.now() - rand(5 * 60) * 60_000) : new Date(Date.now() - (1 + rand(59)) * 86_400_000);
+        if (!today) d.setHours(10 + rand(11), rand(60));
         await db.sale.update({ where: { id: sale.id }, data: { createdAt: d } });
         await db.cashMovement.updateMany({ where: { saleId: sale.id }, data: { createdAt: d } });
         await db.stockMovement.updateMany({ where: { saleId: sale.id }, data: { createdAt: d } });

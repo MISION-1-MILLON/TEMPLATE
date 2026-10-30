@@ -30,3 +30,32 @@ export function Stat({ label, value, hint }: { label: string; value: string; hin
     </div>
   );
 }
+
+/** Tira de cifras con reglas (estilo Stripe): la primera es la principal */
+export function Figures({ items }: { items: { label: string; value: string; hint?: React.ReactNode; tone?: "warning" | "negative" }[] }) {
+  return (
+    <dl className="card mb-6 grid grid-cols-2 divide-slate-100 sm:flex sm:divide-x">
+      {items.map((f, i) => (
+        <div key={f.label} className={`min-w-0 flex-1 px-5 py-4 ${i > 1 ? "border-t border-slate-100 sm:border-t-0" : ""} ${i % 2 === 1 ? "border-l border-slate-100 sm:border-l-0" : ""}`}>
+          <dt className="truncate text-sm text-slate-500">{f.label}</dt>
+          <dd className={`num mt-1 truncate font-semibold tracking-tight ${i === 0 ? "text-2xl" : "text-xl"} ${f.tone === "warning" ? "text-warning" : f.tone === "negative" ? "text-negative" : ""}`}>{f.value}</dd>
+          {f.hint && <dd className="mt-0.5 truncate text-xs text-slate-500">{f.hint}</dd>}
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+/** Filtros rápidos como enlaces (funcionan sin JavaScript y se pueden compartir) */
+export function FilterChips({ items }: { items: { label: string; href: string; active: boolean }[] }) {
+  return (
+    <nav className="flex gap-1 overflow-x-auto rounded-lg bg-slate-100 p-0.5" aria-label="Filtro">
+      {items.map((c) => (
+        <a key={c.href} href={c.href} aria-current={c.active ? "page" : undefined}
+          className={`whitespace-nowrap rounded-md px-2.5 py-1 text-sm font-medium transition-colors duration-150 ${c.active ? "bg-white text-ink shadow-[0_1px_2px_rgb(0_0_0/0.08)]" : "text-slate-600 hover:text-ink"}`}>
+          {c.label}
+        </a>
+      ))}
+    </nav>
+  );
+}

@@ -11,9 +11,9 @@ export function MarketBar({ my, min, max, avg }: { my: number; min: number; max:
       <div className="relative h-2 rounded-full bg-slate-100">
         <div className="absolute inset-y-0 rounded-full bg-slate-300" style={{ left: pos(min), right: `calc(100% - ${pos(max)})` }} />
         <div className="absolute -top-1 h-4 w-0.5 bg-slate-500" style={{ left: pos(avg) }} title={`Media ${formatMoney(avg)}`} />
-        <div className="absolute -top-1.5 h-5 w-5 -translate-x-1/2 rounded-full border-2 border-white bg-brand-600 shadow" style={{ left: pos(my) }} title={`Tú ${formatMoney(my)}`} />
+        <div className="absolute -top-1.5 h-5 w-5 -translate-x-1/2 rounded-full border-2 border-surface bg-ink shadow-[0_1px_3px_rgb(0_0_0/0.25)]" style={{ left: pos(my) }} title={`Tú ${formatMoney(my)}`} />
       </div>
-      <div className="mt-1.5 flex justify-between text-[11px] text-slate-500">
+      <div className="num mt-1.5 flex justify-between text-2xs text-slate-500">
         <span>{formatMoney(min)}</span>
         <span>media {formatMoney(avg)}</span>
         <span>{formatMoney(max)}</span>

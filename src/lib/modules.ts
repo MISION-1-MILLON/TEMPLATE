@@ -121,14 +121,14 @@ export const PLANS: Plan[] = [
     name: "Gratis",
     priceMonthly: 0,
     blurb: "Para empezar a ordenar el negocio.",
-    features: ["Hasta 50 productos", "Ventas y facturas ilimitadas", "Revisión mensual gratis de competencia y proveedores", "Tienda / carta online", "1 usuario"],
+    features: ["Hasta 50 productos", "Ventas y facturas ilimitadas", "Revisión mensual gratis de competencia y proveedores", "Tienda / carta online", "Equipo con perfiles: gerente, empleados y gestoría"],
   },
   {
     id: "pro",
     name: "Pro",
     priceMonthly: 29,
     blurb: "Para negocios que quieren crecer.",
-    features: ["Productos ilimitados", "Todo lo de Gratis", "Publica: posts para redes", "Estadísticas de ventas", "Hasta 5 usuarios", "Personalización de sector"],
+    features: ["Productos ilimitados", "Todo lo de Gratis", "Publica: posts para redes", "Estadísticas de ventas", "Personalización de sector"],
     highlighted: true,
   },
   {

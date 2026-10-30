@@ -19,8 +19,10 @@ export function SettingsForm({ values }: { values: Values }) {
   );
   return (
     <form action={action} className="card space-y-4 p-6">
-      <h2 className="font-bold">Datos del negocio</h2>
-      <p className="text-sm text-slate-500">Aparecen en tus facturas y en la tienda online.</p>
+      <div>
+      <h2 className="card-title">Datos del negocio</h2>
+      <p className="mt-1 text-sm text-slate-500">Aparecen en tus facturas y en la tienda online.</p>
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {field("name", "Nombre comercial")}
         {field("taxId", "NIF / CIF")}
@@ -32,7 +34,7 @@ export function SettingsForm({ values }: { values: Values }) {
         {field("taxRate", "IVA por defecto (%)")}
       </div>
       <FormError error={state?.error} />
-      {state?.ok && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{state.ok}</p>}
+      {state?.ok && <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800" role="status">{state.ok}</p>}
       <SubmitButton>Guardar</SubmitButton>
     </form>
   );

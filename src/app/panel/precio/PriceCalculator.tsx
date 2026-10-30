@@ -21,7 +21,7 @@ export function PriceCalculator({ defaultTax }: { defaultTax: number }) {
 
   return (
     <section className="card space-y-4 self-start p-5">
-      <h2 className="font-bold">🧮 ¿A cuánto lo vendo?</h2>
+      <h2 className="card-title">¿A cuánto lo vendo?</h2>
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
           <label className="label">¿Cuánto te cuesta a ti? (€)</label>
@@ -41,7 +41,7 @@ export function PriceCalculator({ defaultTax }: { defaultTax: number }) {
       </label>
       <div className="rounded-lg bg-brand-50 p-4">
         <p className="text-sm text-slate-600">Véndelo a</p>
-        <p className="display text-4xl tabular-nums text-brand-700">{formatMoney(Math.round(pvp * 100))}</p>
+        <p className="num text-4xl font-semibold tracking-tight">{formatMoney(Math.round(pvp * 100))}</p>
         <p className="mt-1 text-xs text-slate-600">
           Te quedas {formatMoney(Math.round((realBase - num(cost)) * 100))} por unidad ({realMargin.toFixed(0)} % de lo que cobras, sin contar el IVA)
         </p>

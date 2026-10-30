@@ -75,13 +75,13 @@ export function marketStats(myPriceCents: number, prices: { priceCents: number }
   return { count: values.length, min, max, avg, diffPct, position, rank };
 }
 
-export const POSITION_INFO: Record<MarketPosition, { label: string; emoji: string; tone: string }> = {
-  nodata: { label: "Sin comparar", emoji: "❔", tone: "bg-slate-100 text-slate-600" },
-  cheapest: { label: "Eres el más barato", emoji: "🥇", tone: "bg-emerald-100 text-emerald-800" },
-  below: { label: "Más barato que la media", emoji: "👍", tone: "bg-emerald-50 text-emerald-700" },
-  average: { label: "En la media", emoji: "⚖️", tone: "bg-sky-50 text-sky-700" },
-  above: { label: "Más caro que la media", emoji: "⚠️", tone: "bg-amber-50 text-amber-800" },
-  most_expensive: { label: "Eres el más caro", emoji: "🔺", tone: "bg-red-50 text-red-700" },
+export const POSITION_INFO: Record<MarketPosition, { label: string; badge: string }> = {
+  nodata: { label: "Sin comparar", badge: "badge-neutral" },
+  cheapest: { label: "Eres el más barato", badge: "badge-positive" },
+  below: { label: "Más barato que la media", badge: "badge-positive" },
+  average: { label: "En la media", badge: "badge-neutral" },
+  above: { label: "Más caro que la media", badge: "badge-warning" },
+  most_expensive: { label: "Eres el más caro", badge: "badge-negative" },
 };
 
 /* ─── Proveedores ─────────────────────────────────────────────────────── */
@@ -135,4 +135,3 @@ export const UNITS: Record<string, string> = {
   par: "par",
 };
 
-export const MEDALS = ["🥇", "🥈", "🥉"];

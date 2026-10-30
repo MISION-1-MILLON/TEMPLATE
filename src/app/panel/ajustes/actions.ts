@@ -9,6 +9,7 @@ import { can } from "@/lib/permissions";
 import { db } from "@/lib/db";
 import { seedSectorData } from "@/lib/onboarding";
 import { slugify } from "@/lib/utils";
+import { MODULES } from "@/lib/modules";
 import { SECTORS } from "@/sectors";
 
 export type SettingsState = { error?: string; ok?: string } | undefined;
@@ -51,6 +52,16 @@ export async function savePoolSettings(form: FormData) {
     where: { id: org.id },
     data: { poolShare: form.get("poolShare") === "on", poolPublic: form.get("poolPublic") === "on" },
   });
+  revalidatePath("/panel", "layout");
+}
+
+/** Herramientas encendidas en el negocio: lo apagado desaparece del menú de todos */
+export async function saveModules(form: FormData) {
+  const { org, role } = await requireSession();
+  if (!can(role, "settings.manage")) return;
+  const on = new Set(form.getAll("modules").map(String));
+  const modules = MODULES.filter((m) => m.core || (m.status === "live" && on.has(m.id))).map((m) => m.id);
+  await db.organization.update({ where: { id: org.id }, data: { modules } });
   revalidatePath("/panel", "layout");
 }
 

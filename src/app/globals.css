@@ -88,6 +88,16 @@ a { text-underline-offset: 3px; }
   .table tbody tr { transition: background-color 120ms ease; }
   .table tbody tr:hover { @apply bg-slate-50; }
 
+  /* Interruptor: un checkbox nativo con forma de switch (accesible y sin JS) */
+  .switch {
+    @apply relative h-5 w-9 shrink-0 cursor-pointer appearance-none rounded-full bg-slate-300 transition-colors duration-200 ease-out checked:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .switch::after {
+    content: "";
+    @apply absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-[0_1px_2px_rgb(0_0_0/0.2)] transition-transform duration-200 ease-out;
+  }
+  .switch:checked::after { transform: translateX(1rem); }
+  .switch:focus-visible { @apply outline-none ring-2 ring-brand-500/40 ring-offset-2 ring-offset-canvas; }
   .badge { @apply inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-xs font-medium; }
   .badge-neutral { @apply badge bg-slate-100 text-slate-600; }
   .badge-brand { @apply badge bg-brand-50 text-brand-700; }

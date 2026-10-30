@@ -113,7 +113,7 @@ export const getProgress = cache(async function getProgress(org: {
 
   const missions: Mission[] = [
     { id: "producto", title: "Añade tu primer producto", hint: "Lo que vendes es la base de todo.", href: "/panel/productos/nuevo", xp: 20, done: productCount >= 1 },
-    { id: "venta", title: "Haz tu primera venta", hint: "Pulsa VENDER, elige y cobra.", href: "/panel/ventas/nueva", xp: 30, done: salesCount >= 1 },
+    { id: "venta", title: "Haz tu primera venta", hint: "Abre Vender, toca lo que se lleva y cobra.", href: "/panel/ventas/nueva", xp: 30, done: salesCount >= 1 },
     { id: "perfil", title: "Completa los datos de tu negocio", hint: "Salen en tus facturas y en tu tienda.", href: "/panel/ajustes", xp: 20, done: Boolean(org.taxId && (org.address || org.phone)) },
     { id: "cliente", title: "Guarda tu primer cliente", hint: "Así sabrás quién vuelve a comprarte.", href: "/panel/clientes/nuevo", xp: 20, done: customerCount >= 1 },
     { id: "competencia", title: "Compara tus precios con la competencia", hint: "Buscamos en internet a cuánto lo venden otros.", href: "/panel/competencia", xp: 30, done: compared >= 1 },
@@ -121,8 +121,8 @@ export const getProgress = cache(async function getProgress(org: {
     { id: "cinco", title: "Ten 5 productos en tu catálogo", hint: "Cuantos más, más fácil vender.", href: "/panel/productos/nuevo", xp: 30, done: productCount >= 5 },
     { id: "foto", title: "Ponle foto a un producto", hint: "Con foto se vende más en tu tienda online.", href: "/panel/productos", xp: 20, done: withImage >= 1 },
     { id: "gasto", title: "Apunta un gasto en la caja", hint: "Para saber cuánto dinero tienes de verdad.", href: "/panel/caja", xp: 20, done: expenses >= 1 },
-    { id: "diez", title: "Llega a 10 ventas", hint: "¡Vas cogiendo ritmo!", href: "/panel/ventas/nueva", xp: 50, done: salesCount >= 10 },
-    { id: "objetivo", title: "Cumple tu objetivo del día", hint: "Mira el anillo de tu inicio.", href: "/panel", xp: 50, done: goalEverReached },
+    { id: "diez", title: "Llega a 10 ventas", hint: "Vas cogiendo ritmo.", href: "/panel/ventas/nueva", xp: 50, done: salesCount >= 10 },
+    { id: "objetivo", title: "Cumple tu objetivo del día", hint: "Lo ves en el pulso del día, en Inicio.", href: "/panel", xp: 50, done: goalEverReached },
     { id: "racha", title: "Vende 3 días seguidos", hint: "La constancia tiene premio.", href: "/panel/ventas/nueva", xp: 50, done: streak >= 3 },
     { id: "cien", title: "Llega a 100 ventas", hint: "Esto ya es un negocio en marcha.", href: "/panel/ventas/nueva", xp: 150, done: salesCount >= 100 },
   ];

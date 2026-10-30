@@ -70,7 +70,7 @@ async function main() {
     });
     await db.organization.update({
       where: { id: org.id },
-      data: { plan: "pro", taxId: "B12345678", address: "Calle Mayor 1, Madrid", phone: "600123456", email: "hola@ejemplo.com" },
+      data: { plan: sector.id === "restauracion" ? "business" : "pro", taxId: "B12345678", address: "Calle Mayor 1, Madrid", phone: "600123456", email: "hola@ejemplo.com" },
     });
     const main = (await db.location.findFirstOrThrow({ where: { orgId: org.id } })).id;
     await db.location.update({ where: { id: main }, data: { name: "Centro", address: "Calle Mayor 1, Madrid", opensAt: "10:00", closesAt: "23:00" } });

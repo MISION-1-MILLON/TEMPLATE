@@ -7,6 +7,7 @@ import { db } from "./db";
 import { SESSION_COOKIE, sessionCookieOptions, signSession, verifySession } from "./session";
 import { asRole, can, PermissionError, type Permission } from "./permissions";
 import { getSector } from "@/sectors";
+import { getModule, moduleEnabled } from "./modules";
 
 /** Local activo del panel (se cambia desde la barra lateral) */
 export const LOCATION_COOKIE = "nexo_loc";
@@ -85,4 +86,12 @@ export async function requireLocation() {
 export async function getOptionalSession() {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   return verifySession(token);
+}
+
+/** Página de una herramienta: 404 si está apagada en el negocio o el rol no puede usarla */
+export async function requireModule(id: string) {
+  const s = await requireSession();
+  const m = getModule(id);
+  if (!m || !moduleEnabled(s.org, id) || !s.can(m.permission)) notFound();
+  return { ...s, module: m };
 }

@@ -55,7 +55,7 @@ export async function deleteCompetitor(id: string) {
 
 /** Cambiar mi precio desde la comparativa (igualar al más barato, a la media…) */
 export async function setMyPrice(productId: string, form: FormData) {
-  const { org } = await requirePermission("market.use");
+  const { org } = await requirePermission("products.manage");
   const priceCents = Number(form.get("priceCents"));
   if (!Number.isInteger(priceCents) || priceCents <= 0) return;
   await db.product.updateMany({ where: { id: productId, orgId: org.id }, data: { priceCents } });

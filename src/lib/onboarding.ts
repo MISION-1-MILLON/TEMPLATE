@@ -3,6 +3,8 @@ import type { Prisma } from "@prisma/client";
 import { db } from "./db";
 import { slugify } from "./utils";
 import { getSector } from "@/sectors";
+import { defaultModulesFor } from "./modules";
+import { moveStock } from "./stock";
 
 async function uniqueSlug(base: string) {
   const root = slugify(base) || "negocio";
@@ -37,15 +39,18 @@ export async function createAccount(input: {
         slug,
         sector: sector.id,
         taxRateBp: sector.id === "restauracion" ? 1000 : 2100,
+        modules: defaultModulesFor(sector.id),
         memberships: { create: { userId: user.id, role: "owner" } },
+        locations: { create: { name: input.businessName } },
       },
+      include: { locations: true },
     });
-    await seedSectorData(tx, org.id, sector.id, input.withDemo ?? false);
+    await seedSectorData(tx, org.id, org.locations[0].id, sector.id, input.withDemo ?? false);
     return { user, org };
   });
 }
 
-export async function seedSectorData(tx: Prisma.TransactionClient, orgId: string, sectorId: string, withDemo: boolean) {
+export async function seedSectorData(tx: Prisma.TransactionClient, orgId: string, locationId: string, sectorId: string, withDemo: boolean) {
   const sector = getSector(sectorId);
   const categories = new Map<string, string>();
   for (const name of sector.defaultCategories) {
@@ -65,14 +70,13 @@ export async function seedSectorData(tx: Prisma.TransactionClient, orgId: string
         categoryId: categories.get(p.category) ?? null,
         priceCents: Math.round(p.price * 100),
         costCents: Math.round(p.cost * 100),
-        stock: p.stock,
         trackStock: sector.trackStockByDefault,
         attributes: p.attributes as Prisma.InputJsonValue,
         isDemo: true,
       },
     });
     if (p.stock > 0 && sector.trackStockByDefault) {
-      await tx.stockMovement.create({ data: { orgId, productId: product.id, delta: p.stock, reason: "purchase" } });
+      await moveStock(tx, { orgId, productId: product.id, locationId, delta: p.stock, reason: "purchase" });
     }
   }
 }

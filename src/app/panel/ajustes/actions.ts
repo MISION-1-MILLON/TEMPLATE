@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { billingEnabled, createCheckoutUrl, createPortalUrl, setCancelAtPeriodEnd, switchSubscriptionPlan, type PaidPlan } from "@/lib/billing";
 import { requireSession } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import { db } from "@/lib/db";
 import { seedSectorData } from "@/lib/onboarding";
 import { slugify } from "@/lib/utils";
@@ -14,7 +15,7 @@ export type SettingsState = { error?: string; ok?: string } | undefined;
 
 export async function saveSettings(_: SettingsState, form: FormData): Promise<SettingsState> {
   const { org, role } = await requireSession();
-  if (role === "staff") return { error: "Solo el propietario puede cambiar los ajustes" };
+  if (!can(role, "settings.manage")) return { error: "Solo el dueño puede cambiar los ajustes del negocio" };
 
   const str = (k: string) => String(form.get(k) ?? "").trim() || null;
   const name = str("name");
@@ -45,7 +46,7 @@ export async function saveSettings(_: SettingsState, form: FormData): Promise<Se
 /** Participación en la bolsa común de productos */
 export async function savePoolSettings(form: FormData) {
   const { org, role } = await requireSession();
-  if (role === "staff") return;
+  if (!can(role, "settings.manage")) return;
   await db.organization.update({
     where: { id: org.id },
     data: { poolShare: form.get("poolShare") === "on", poolPublic: form.get("poolPublic") === "on" },
@@ -57,10 +58,11 @@ export async function savePoolSettings(form: FormData) {
 export async function changeSector(form: FormData) {
   const { org, role } = await requireSession();
   const sector = String(form.get("sector") ?? "");
-  if (role === "staff" || !(sector in SECTORS)) return;
+  if (!can(role, "settings.manage") || !(sector in SECTORS)) return;
   await db.$transaction(async (tx) => {
     await tx.organization.update({ where: { id: org.id }, data: { sector } });
-    await seedSectorData(tx, org.id, sector, false);
+    const first = await tx.location.findFirst({ where: { orgId: org.id }, orderBy: { createdAt: "asc" } });
+    if (first) await seedSectorData(tx, org.id, first.id, sector, false);
   });
   revalidatePath("/panel", "layout");
 }
@@ -85,7 +87,7 @@ async function origin() {
 export async function changePlan(form: FormData) {
   const { org, role, user } = await requireSession();
   const plan = String(form.get("plan") ?? "");
-  if (role === "staff" || !["free", "pro", "business"].includes(plan)) return;
+  if (!can(role, "billing.manage") || !["free", "pro", "business"].includes(plan)) return;
 
   if (!billingEnabled()) {
     if (process.env.NODE_ENV === "production") redirect("/panel/ajustes?pago=no-configurado#plan");
@@ -114,14 +116,14 @@ export async function changePlan(form: FormData) {
 
 export async function resumeSubscription() {
   const { org, role } = await requireSession();
-  if (role === "staff" || !org.stripeSubscriptionId || !billingEnabled()) return;
+  if (!can(role, "billing.manage") || !org.stripeSubscriptionId || !billingEnabled()) return;
   await setCancelAtPeriodEnd(org.stripeSubscriptionId, false);
   revalidatePath("/panel", "layout");
 }
 
 export async function openBillingPortal() {
   const { org, role } = await requireSession();
-  if (role === "staff" || !org.stripeCustomerId || !billingEnabled()) return;
+  if (!can(role, "billing.manage") || !org.stripeCustomerId || !billingEnabled()) return;
   let url: string;
   try {
     url = await createPortalUrl(org.stripeCustomerId, await origin());

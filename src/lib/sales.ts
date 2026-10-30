@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "./db";
 import { splitTax } from "./money";
 import { zonedParts } from "./time";
+import { moveStock, stockAt } from "./stock";
 
 export interface SaleInputItem {
   productId: string;
@@ -15,6 +16,8 @@ export interface SaleInput {
   paymentMethod: string;
   status: "paid" | "pending";
   notes?: string | null;
+  /** Descuento sobre el ticket (IVA incl.) */
+  discountCents?: number;
   items: SaleInputItem[];
 }
 
@@ -25,7 +28,7 @@ export class SaleError extends Error {}
  * descuenta stock, deja rastro en movimientos de stock y, si está cobrada,
  * apunta la entrada en caja. Todo en una transacción.
  */
-export async function createSale(orgId: string, userId: string, input: SaleInput) {
+export async function createSale(orgId: string, locationId: string, userId: string, input: SaleInput) {
   const items = input.items.filter((i) => i.quantity > 0);
   if (items.length === 0) throw new SaleError("Añade al menos una línea a la venta");
 
@@ -37,6 +40,7 @@ export async function createSale(orgId: string, userId: string, input: SaleInput
           where: { orgId, id: { in: items.map((i) => i.productId) } },
         });
         const byId = new Map(products.map((p) => [p.id, p]));
+        const here = await stockAt(tx, locationId, products.map((p) => p.id));
 
         let subtotal = 0;
         let tax = 0;
@@ -44,8 +48,9 @@ export async function createSale(orgId: string, userId: string, input: SaleInput
         const lines = items.map((i) => {
           const p = byId.get(i.productId);
           if (!p) throw new SaleError("Uno de los productos ya no existe");
-          if (p.trackStock && p.stock < i.quantity) {
-            throw new SaleError(`No hay stock suficiente de «${p.name}» (quedan ${p.stock})`);
+          const left = here.get(p.id) ?? 0;
+          if (p.trackStock && left < i.quantity) {
+            throw new SaleError(`No hay stock suficiente de «${p.name}» en este local (quedan ${left})`);
           }
           const unit = i.unitPriceCents ?? p.priceCents;
           const rate = p.taxRateBp ?? org.taxRateBp;
@@ -57,6 +62,15 @@ export async function createSale(orgId: string, userId: string, input: SaleInput
           return { product: p, quantity: i.quantity, unit, rate };
         });
 
+        // Descuento del ticket: se resta del total y la base y el IVA se reparten en proporción
+        const discount = Math.max(0, Math.min(input.discountCents ?? 0, total));
+        if (discount > 0) {
+          const kept = (total - discount) / total;
+          subtotal = Math.round(subtotal * kept);
+          total -= discount;
+          tax = total - subtotal;
+        }
+
         const last = await tx.sale.findFirst({ where: { orgId }, orderBy: { number: "desc" }, select: { number: true } });
         const sale = await tx.sale.create({
           data: {
@@ -64,6 +78,8 @@ export async function createSale(orgId: string, userId: string, input: SaleInput
             number: (last?.number ?? 0) + 1,
             customerId: input.customerId || null,
             createdById: userId,
+            locationId,
+            discountCents: discount,
             status: input.status,
             paymentMethod: input.paymentMethod,
             notes: input.notes || null,
@@ -84,15 +100,12 @@ export async function createSale(orgId: string, userId: string, input: SaleInput
 
         for (const l of lines) {
           if (!l.product.trackStock) continue;
-          await tx.product.update({ where: { id: l.product.id }, data: { stock: { decrement: l.quantity } } });
-          await tx.stockMovement.create({
-            data: { orgId, productId: l.product.id, delta: -l.quantity, reason: "sale", saleId: sale.id },
-          });
+          await moveStock(tx, { orgId, productId: l.product.id, locationId, delta: -l.quantity, reason: "sale", saleId: sale.id, userId });
         }
 
         if (input.status === "paid") {
           await tx.cashMovement.create({
-            data: { orgId, amountCents: total, method: input.paymentMethod, concept: `Venta nº ${sale.number}`, saleId: sale.id },
+            data: { orgId, locationId, amountCents: total, method: input.paymentMethod, concept: `Venta nº ${sale.number}`, saleId: sale.id },
           });
         }
         return sale;
@@ -112,7 +125,7 @@ export async function markSalePaid(orgId: string, saleId: string, method: string
     if (!sale || sale.status !== "pending") throw new SaleError("La venta no está pendiente de cobro");
     await tx.sale.update({ where: { id: sale.id }, data: { status: "paid", paymentMethod: method } });
     await tx.cashMovement.create({
-      data: { orgId, amountCents: sale.totalCents, method, concept: `Cobro venta nº ${sale.number}`, saleId: sale.id },
+      data: { orgId, locationId: sale.locationId, amountCents: sale.totalCents, method, concept: `Cobro venta nº ${sale.number}`, saleId: sale.id },
     });
   });
 }
@@ -124,15 +137,12 @@ export async function cancelSale(orgId: string, saleId: string) {
     if (!sale || sale.status === "cancelled") throw new SaleError("La venta ya está anulada");
 
     for (const item of sale.items) {
-      if (!item.product?.trackStock) continue;
-      await tx.product.update({ where: { id: item.product.id }, data: { stock: { increment: item.quantity } } });
-      await tx.stockMovement.create({
-        data: { orgId, productId: item.product.id, delta: item.quantity, reason: "cancel", saleId: sale.id },
-      });
+      if (!item.product?.trackStock || !sale.locationId) continue;
+      await moveStock(tx, { orgId, productId: item.product.id, locationId: sale.locationId, delta: item.quantity, reason: "cancel", saleId: sale.id });
     }
     if (sale.status === "paid") {
       await tx.cashMovement.create({
-        data: { orgId, amountCents: -sale.totalCents, method: sale.paymentMethod, concept: `Anulación venta nº ${sale.number}`, saleId: sale.id },
+        data: { orgId, locationId: sale.locationId, amountCents: -sale.totalCents, method: sale.paymentMethod, concept: `Anulación venta nº ${sale.number}`, saleId: sale.id },
       });
     }
     await tx.sale.update({ where: { id: sale.id }, data: { status: "cancelled" } });

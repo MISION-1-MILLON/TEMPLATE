@@ -5,7 +5,10 @@
  */
 import { PrismaClient } from "@prisma/client";
 import { createAccount } from "../src/lib/onboarding";
+import bcrypt from "bcryptjs";
 import { createSale } from "../src/lib/sales";
+import { moveStock } from "../src/lib/stock";
+import { defaultModulesFor } from "../src/lib/modules";
 import { SECTOR_LIST } from "../src/sectors";
 
 const db = new PrismaClient();
@@ -35,10 +38,14 @@ async function seedPoolOrgs() {
   for (const o of POOL_ORGS) {
     const slug = o.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-");
     await db.organization.deleteMany({ where: { slug } });
-    const org = await db.organization.create({ data: { name: o.name, slug, sector: o.sector, address: `Calle Mayor 10, ${o.city}`, poolPublic: o.pub } });
+    const org = await db.organization.create({
+      data: { name: o.name, slug, sector: o.sector, address: `Calle Mayor 10, ${o.city}`, poolPublic: o.pub, modules: defaultModulesFor(o.sector), locations: { create: { name: o.name } } },
+      include: { locations: true },
+    });
     for (const [name, category, price, attributes] of o.products) {
       const cat = await db.category.upsert({ where: { orgId_name: { orgId: org.id, name: category } }, create: { orgId: org.id, name: category }, update: {} });
-      await db.product.create({ data: { orgId: org.id, name, categoryId: cat.id, priceCents: Math.round(price * 100), stock: 5, attributes: (attributes ?? {}) as object } });
+      const product = await db.product.create({ data: { orgId: org.id, name, categoryId: cat.id, priceCents: Math.round(price * 100), attributes: (attributes ?? {}) as object } });
+      await db.$transaction((tx) => moveStock(tx, { orgId: org.id, productId: product.id, locationId: org.locations[0].id, delta: 5, reason: "purchase" }));
     }
   }
   console.log(`✔ Bolsa: ${POOL_ORGS.length} negocios de ejemplo`);
@@ -65,8 +72,28 @@ async function main() {
       where: { id: org.id },
       data: { plan: "pro", taxId: "B12345678", address: "Calle Mayor 1, Madrid", phone: "600123456", email: "hola@ejemplo.com" },
     });
-    // Stock de sobra para poder simular ventas
-    await db.product.updateMany({ where: { orgId: org.id, trackStock: true }, data: { stock: { increment: sector.id === "motor" ? 0 : 40 } } });
+    const main = (await db.location.findFirstOrThrow({ where: { orgId: org.id } })).id;
+    await db.location.update({ where: { id: main }, data: { name: "Centro", address: "Calle Mayor 1, Madrid", opensAt: "10:00", closesAt: "23:00" } });
+    // Restauración: segundo local y un usuario de cada perfil para probar los cuatro centros de mando
+    const locations = [main];
+    if (sector.id === "restauracion") {
+      const second = await db.location.create({ data: { orgId: org.id, name: "Malasaña", address: "Calle del Pez 12, Madrid", opensAt: "12:00", closesAt: "00:00" } });
+      locations.push(second.id);
+      const hash = await bcrypt.hash("demo1234", 10);
+      for (const [role, name, locs] of [["manager", "Marta Gerente", [main]], ["staff", "Leo Empleado", [main]], ["accountant", "Asesoría López", []]] as const) {
+        const roleEmail = `demo+${role}@nexo.app`;
+        await db.user.deleteMany({ where: { email: roleEmail } });
+        await db.user.create({ data: { email: roleEmail, name, passwordHash: hash, memberships: { create: { orgId: org.id, role, locationIds: [...locs] } } } });
+        console.log(`  · ${name}: ${roleEmail} / demo1234`);
+      }
+    }
+    // Stock de sobra en cada local para poder simular ventas
+    if (sector.id !== "motor") {
+      const tracked = await db.product.findMany({ where: { orgId: org.id, trackStock: true } });
+      for (const loc of locations) for (const p of tracked) {
+        await db.$transaction((tx) => moveStock(tx, { orgId: org.id, productId: p.id, locationId: loc, delta: loc === main ? 40 : 25, reason: "purchase" }));
+      }
+    }
 
     const customers = await Promise.all(
       NAMES.slice(0, 6).map((name) => db.customer.create({ data: { orgId: org.id, name, phone: `6${rand(1e8)}`, attributes: {} } })),
@@ -78,7 +105,7 @@ async function main() {
       const lines = Array.from({ length: 1 + rand(sector.id === "restauracion" ? 4 : 2) }, () => products[rand(products.length)]);
       const items = [...new Map(lines.map((p) => [p.id, { productId: p.id, quantity: 1 + rand(2) }])).values()];
       try {
-        const sale = await createSale(org.id, user.id, {
+        const sale = await createSale(org.id, locations[rand(locations.length)], user.id, {
           customerId: Math.random() < 0.5 ? customers[rand(customers.length)].id : null,
           paymentMethod: ["card", "card", "cash", "bizum"][rand(4)],
           status: Math.random() < 0.08 ? "pending" : "paid",
